@@ -1,0 +1,243 @@
+@import url('./variables.css');
+
+/*
+- mobile: até 767px
+- tablet: 768px até 1023px
+- desktop: a partir de 1024px
+*/
+
+/* Tablet */
+@media screen and (max-width: 1023px) {
+  h1 {
+    font-size: var(--fs-2xl);
+  }
+  
+  h2 {
+    font-size: var(--fs-xl);
+  }
+  
+  .sidebar {
+    width: 240px;
+  }
+  
+  .detail-panel {
+    width: 340px;
+  }
+  
+  .exercise-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--spacing-md);
+  }
+  
+  .container {
+    padding: 0 var(--spacing-lg);
+  }
+}
+
+/* Mobile */
+@media screen and (max-width: 767px) {
+  .header {
+    padding: var(--spacing-sm) 0;
+  }
+  
+  .logo__text {
+    font-size: var(--fs-md);
+  }
+  
+  .logo__image {
+    height: 28px;
+  }
+  
+  .nav {
+    display: none;
+  }
+  
+  .nav-toggle {
+    display: block;
+  }
+  
+  .main-layout {
+    flex-direction: column;
+    min-height: calc(100vh - 60px);
+  }
+  
+  .sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    height: calc(100vh - 60px);
+    z-index: var(--z-drawer);
+    transform: translateY(100%);
+    transition: transform var(--transition-normal);
+    clip-path: none;
+    border-right: none;
+    border-top: 1px solid var(--color-border);
+  }
+  
+  .sidebar.open {
+    transform: translateY(0);
+  }
+  
+  .sidebar__toggle {
+    display: block;
+  }
+  
+  .content {
+    padding: var(--spacing-md) var(--spacing-md) calc(var(--spacing-md) + 60px);
+  }
+  
+  .content__title {
+    font-size: var(--fs-xl);
+  }
+  
+  .content__subtitle {
+    font-size: var(--fs-md);
+  }
+  
+  .exercise-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+  
+  .exercise-card {
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .detail-panel {
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    z-index: var(--z-modal);
+    padding-top: calc(var(--spacing-xl) + 20px);
+  }
+  
+  .detail-panel__close {
+    top: var(--spacing-lg);
+    right: var(--spacing-lg);
+    padding: var(--spacing-sm);
+    font-size: var(--fs-xl);
+  }
+  
+  .footer {
+    padding: var(--spacing-lg) 0;
+  }
+  
+  .footer__container {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+    text-align: center;
+  }
+  
+  .footer__logo {
+    justify-content: center;
+  }
+  
+  .footer__links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .nav-mobile-bar {
+    display: block;
+  }
+  
+  button, .btn, .exercise-card__favorite, .nav-mobile__link {
+    min-height: 44px;
+  }
+  
+  .filter-checkbox {
+    padding: var(--spacing-sm) 0;
+  }
+  
+  .chip-container {
+    padding-bottom: var(--spacing-sm);
+    overflow-x: auto;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    margin-left: calc(-1 * var(--spacing-md));
+    margin-right: calc(-1 * var(--spacing-md));
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+  
+  .chip {
+    flex-shrink: 0;
+  }
+  
+  .toast-container {
+    bottom: 70px;
+    right: 16px;
+    left: 16px;
+  }
+  
+  .toast {
+    max-width: 100%;
+  }
+  
+  .container {
+    padding: 0 var(--spacing-md);
+  }
+}
+
+/* Telas muito pequenas */
+@media screen and (max-width: 374px) {
+  html {
+    font-size: 14px;
+  }
+  
+  .logo__text {
+    font-size: var(--fs-sm);
+  }
+  
+  .logo__image {
+    height: 24px;
+  }
+  
+  .exercise-card__title {
+    font-size: var(--fs-md);
+  }
+  
+  .exercise-card__description {
+    font-size: var(--fs-xs);
+  }
+}
+
+/* Telas muito grandes */
+@media screen and (min-width: 1440px) {
+  .container {
+    max-width: 1400px;
+  }
+  
+  .exercise-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+/* Variações para impressão */
+@media print {
+  .header, .sidebar, .nav-mobile-bar, .footer {
+    display: none;
+  }
+  
+  .main-layout {
+    display: block;
+  }
+  
+  .content {
+    padding: 0;
+  }
+  
+  .exercise-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #eee;
+  }
+  
+  body {
+    font-size: 12pt;
+    color: #000;
+    background: #fff;
+  }
+}
