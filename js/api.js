@@ -28,12 +28,6 @@
     tokenExpiry: localStorage.getItem('tokenExpiry') || null
   };
   
-  /**
-   * Construir URL completa para endpoint
-   * @param {string} endpoint - Endpoint da API
-   * @param {Object} queryParams - Parâmetros de consulta (opcional)
-   * @returns {string} URL completa
-   */
   function buildUrl(endpoint, queryParams = {}) {
     const url = new URL(API_CONFIG.baseUrl + endpoint);
     
@@ -268,7 +262,7 @@
       return dataCache;
     } catch (error) {
       console.error('Erro ao buscar dados auxiliares:', error);
-      return dataCache;
+      return dataCache; // Retornar cache antigo em caso de erro
     }
   }
   
@@ -300,7 +294,7 @@
       difficulty: difficulty,
       image: apiExercise.images && apiExercise.images.length > 0 ? 
              apiExercise.images[0].image : 
-             'https://via.placeholder.com/400x300?text=Sem+imagem'
+             'https://placehold.co/400x300'
     };
   }
   

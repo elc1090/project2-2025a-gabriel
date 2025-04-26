@@ -400,7 +400,7 @@
     
     storage.viewed.add(exercise);
   }
-
+  
   function renderExerciseDetails(exercise) {
     if (!elements.detailContent) return;
     
