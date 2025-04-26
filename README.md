@@ -15,8 +15,7 @@ Acesso: https://elc1090.github.io/project2-2025a-gabriel/
 
 
 ### Desenvolvedores
-Gabriel Bisognin Moro  
-Ciência da Computação
+Gabriel Bisognin Moro | Ciência da Computação
 
 
 ### Nosso produto
