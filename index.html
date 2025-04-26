@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -17,7 +18,7 @@
   <header class="header">
     <div class="container header__container">
       <a href="index.html" class="logo">
-        <img src="assets/favicon.jpg" alt="FitCat" class="logo__image">
+        <img src="#" alt="FitCat" class="logo__image">
         <span class="logo__text">FitCat</span>
       </a>
       
@@ -35,7 +36,6 @@
         </button>
       </nav>
       
-      <!-- Mobile -->
       <button class="nav-toggle" id="nav-toggle" aria-label="Menu">
         <i class="fa-solid fa-bars"></i>
       </button>
@@ -43,7 +43,6 @@
   </header>
   
   <div class="main-layout">
-    <!-- Filtros -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar__header">
         <h2 class="sidebar__title">Filtros</h2>
@@ -224,123 +223,10 @@
     <main class="content">
       <div class="content__header">
         <h1 class="content__title">Biblioteca de Exercícios</h1>
-        <p class="content__subtitle">Explore nossa coleção de exercícios</p>
+        <p class="content__subtitle">Explore nossa coleção de exercícios e encontre o treino perfeito para você</p>
       </div>
       
       <div class="exercise-grid" id="exercise-grid">
-        <article class="exercise-card" data-id="1" data-muscle="chest">
-          <div class="exercise-card__image-container">
-            <img src="https://placehold.co/400x300" alt="Supino Reto" class="exercise-card__image">
-            <span class="exercise-card__badge exercise-card__badge--intermediate">Intermediário</span>
-          </div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__title">Supino Reto com Barra</h3>
-            <p class="exercise-card__description">
-              O supino reto é um exercício composto que trabalha principalmente os músculos peitorais, com ênfase na parte média do peito, além de envolver os tríceps e os deltoides anteriores.
-            </p>
-            <div class="exercise-card__footer">
-              <span class="exercise-card__muscle-group">Peito</span>
-              <button class="exercise-card__favorite" aria-label="Favoritar">
-                <i class="fa-regular fa-star"></i>
-              </button>
-            </div>
-          </div>
-        </article>
-        
-        <article class="exercise-card" data-id="2" data-muscle="back">
-          <div class="exercise-card__image-container">
-            <img src="https://placehold.co/400x300" alt="Puxada Frontal" class="exercise-card__image">
-            <span class="exercise-card__badge exercise-card__badge--beginner">Iniciante</span>
-          </div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__title">Puxada Frontal na Máquina</h3>
-            <p class="exercise-card__description">
-              A puxada frontal é um exercício que trabalha principalmente o músculo latíssimo do dorso (costas), além de envolver os bíceps e os músculos da parte média das costas.
-            </p>
-            <div class="exercise-card__footer">
-              <span class="exercise-card__muscle-group">Costas</span>
-              <button class="exercise-card__favorite" aria-label="Favoritar">
-                <i class="fa-regular fa-star"></i>
-              </button>
-            </div>
-          </div>
-        </article>
-        
-        <article class="exercise-card" data-id="3" data-muscle="legs">
-          <div class="exercise-card__image-container">
-            <img src="https://placehold.co/400x300" alt="Agachamento" class="exercise-card__image">
-            <span class="exercise-card__badge exercise-card__badge--advanced">Avançado</span>
-          </div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__title">Agachamento com Barra</h3>
-            <p class="exercise-card__description">
-              O agachamento com barra livre é um exercício composto que trabalha principalmente os músculos das pernas, incluindo quadríceps, posteriores de coxa e glúteos.
-            </p>
-            <div class="exercise-card__footer">
-              <span class="exercise-card__muscle-group">Pernas</span>
-              <button class="exercise-card__favorite" aria-label="Favoritar">
-                <i class="fa-regular fa-star"></i>
-              </button>
-            </div>
-          </div>
-        </article>
-        
-        <article class="exercise-card" data-id="4" data-muscle="shoulders">
-          <div class="exercise-card__image-container">
-            <img src="https://placehold.co/400x300" alt="Desenvolvimento" class="exercise-card__image">
-            <span class="exercise-card__badge exercise-card__badge--intermediate">Intermediário</span>
-          </div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__title">Desenvolvimento com Halteres</h3>
-            <p class="exercise-card__description">
-              O desenvolvimento com halteres é um exercício que trabalha principalmente os músculos dos ombros (deltoides), com ênfase na porção anterior e média.
-            </p>
-            <div class="exercise-card__footer">
-              <span class="exercise-card__muscle-group">Ombros</span>
-              <button class="exercise-card__favorite" aria-label="Favoritar">
-                <i class="fa-regular fa-star"></i>
-              </button>
-            </div>
-          </div>
-        </article>
-        
-        <article class="exercise-card" data-id="5" data-muscle="arms">
-          <div class="exercise-card__image-container">
-            <img src="https://placehold.co/400x300" alt="Rosca Direta" class="exercise-card__image">
-            <span class="exercise-card__badge exercise-card__badge--beginner">Iniciante</span>
-          </div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__title">Rosca Direta com Barra</h3>
-            <p class="exercise-card__description">
-              A rosca direta com barra é um exercício isolado que trabalha principalmente os músculos bíceps, localizados na parte frontal do braço.
-            </p>
-            <div class="exercise-card__footer">
-              <span class="exercise-card__muscle-group">Braços</span>
-              <button class="exercise-card__favorite" aria-label="Favoritar">
-                <i class="fa-regular fa-star"></i>
-              </button>
-            </div>
-          </div>
-        </article>
-        
-        <article class="exercise-card" data-id="6" data-muscle="core">
-          <div class="exercise-card__image-container">
-            <img src="https://placehold.co/400x300" alt="Abdominal" class="exercise-card__image">
-            <span class="exercise-card__badge exercise-card__badge--beginner">Iniciante</span>
-          </div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__title">Abdominal Tradicional</h3>
-            <p class="exercise-card__description">
-              O abdominal tradicional é um exercício que trabalha principalmente os músculos do abdômen, especialmente o reto abdominal, responsável pelo "tanquinho".
-            </p>
-            <div class="exercise-card__footer">
-              <span class="exercise-card__muscle-group">Abdômen</span>
-              <button class="exercise-card__favorite" aria-label="Favoritar">
-                <i class="fa-regular fa-star"></i>
-              </button>
-            </div>
-          </div>
-        </article>
       </div>
       
       <div class="pagination">
@@ -367,7 +253,6 @@
     </aside>
   </div>
   
-  <!-- Mobile -->
   <nav class="nav-mobile-bar">
     <ul class="nav-mobile__list">
       <li class="nav-mobile__item">

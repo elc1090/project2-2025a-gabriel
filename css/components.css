@@ -1,6 +1,6 @@
+
 @import url('./variables.css');
 
-/* Cards de exercícios */
 .exercise-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -28,7 +28,7 @@
   left: 0;
   width: 6px;
   height: 100%;
-  background-color: var(--card-before-background, var(--color-muscle-chest)); /* Usa variável dinâmica */
+  background-color: var(--card-before-background, var(--color-muscle-chest));
   transition: background-color var(--transition-normal);
 }
 
@@ -231,7 +231,7 @@
   color: var(--color-text-tertiary);
 }
 
-/* Filtros rápidos */
+/* Chips para filtros rápidos */
 .chip-container {
   display: flex;
   flex-wrap: wrap;
@@ -374,6 +374,8 @@
   justify-content: center;
   align-items: center;
   padding: var(--spacing-xl);
+  width: 100%;
+  grid-column: 1 / -1; /* Ocupar toda a largura da grade */
 }
 
 /* Estado vazio */

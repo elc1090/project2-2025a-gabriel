@@ -7,15 +7,18 @@
       'Accept': 'application/json',
       'Content-Type': 'application/json'
     },
+    apiKey: '9798b3f1455c99a1d5ec4bfae475f02c2ea9cd56',
     endpoints: {
       token: '/token/',
       tokenRefresh: '/token/refresh/',
       tokenVerify: '/token/verify/',
       exercises: '/exercise/',
+      exerciseInfo: '/exerciseinfo/',
       exerciseImages: '/exerciseimage/',
       exerciseCategories: '/exercisecategory/',
       equipment: '/equipment/',
-      muscles: '/muscle/'
+      muscles: '/muscle/',
+      languages: '/language/'
     }
   };
   
@@ -25,6 +28,12 @@
     tokenExpiry: localStorage.getItem('tokenExpiry') || null
   };
   
+  /**
+   * Construir URL completa para endpoint
+   * @param {string} endpoint - Endpoint da API
+   * @param {Object} queryParams - Parâmetros de consulta (opcional)
+   * @returns {string} URL completa
+   */
   function buildUrl(endpoint, queryParams = {}) {
     const url = new URL(API_CONFIG.baseUrl + endpoint);
     
@@ -39,6 +48,8 @@
   
   function getHeaders(requiresAuth = false) {
     const headers = { ...API_CONFIG.defaultHeaders };
+    
+    headers['Authorization'] = `Token ${API_CONFIG.apiKey}`;
     
     if (requiresAuth && authState.accessToken) {
       headers['Authorization'] = `Bearer ${authState.accessToken}`;
@@ -114,7 +125,7 @@
     }
   }
   
-  async function fetchWithAuth(endpoint, options = {}, requiresAuth = false, retry = true) {
+  async function fetchWithAuth(endpoint, options = {}, requiresAuth = false, queryParams = {}, retry = true) {
     if (requiresAuth && !isTokenValid() && authState.refreshToken) {
       const refreshed = await refreshAccessToken();
       if (!refreshed) {
@@ -131,12 +142,12 @@
     };
     
     try {
-      const response = await fetch(buildUrl(endpoint), fetchOptions);
+      const response = await fetch(buildUrl(endpoint, queryParams), fetchOptions);
       
       if (response.status === 401 && retry && authState.refreshToken) {
         const refreshed = await refreshAccessToken();
         if (refreshed) {
-          return fetchWithAuth(endpoint, options, requiresAuth, false);
+          return fetchWithAuth(endpoint, options, requiresAuth, queryParams, false);
         } else {
           throw new Error('Sessão expirada. Por favor, faça login novamente.');
         }
@@ -188,11 +199,23 @@
     const defaultParams = {
       limit: 20,
       offset: 0,
-      language: 'pt'
+      language: 2,
+      status: 2
     };
     
     const queryParams = { ...defaultParams, ...params };
     return fetchWithAuth(API_CONFIG.endpoints.exercises, { method: 'GET' }, false, queryParams);
+  }
+  
+  async function getExerciseInfo(params = {}) {
+    const defaultParams = {
+      limit: 20,
+      offset: 0,
+      language: 2
+    };
+    
+    const queryParams = { ...defaultParams, ...params };
+    return fetchWithAuth(API_CONFIG.endpoints.exerciseInfo, { method: 'GET' }, false, queryParams);
   }
   
   async function getExerciseById(id) {
@@ -214,7 +237,77 @@
   }
   
   async function getMuscles() {
-    return fetchWithAuth(API_CONFIG.endpoints.muscles, { method: 'GET' });
+    return fetchWithAuth(API_CONFIG.endpoints.muscles, { method: 'GET' }, false);
+  }
+  
+  const dataCache = {
+    muscles: null,
+    equipment: null,
+    categories: null,
+    lastFetch: null
+  };
+  
+  async function getAuxiliaryData() {
+    const now = Date.now();
+    if (dataCache.lastFetch && (now - dataCache.lastFetch) < 600000) {
+      return dataCache;
+    }
+    
+    try {
+      const [muscles, equipment, categories] = await Promise.all([
+        getMuscles(),
+        getEquipment(),
+        getExerciseCategories()
+      ]);
+      
+      dataCache.muscles = new Map(muscles.results.map(m => [m.id, m]));
+      dataCache.equipment = new Map(equipment.results.map(e => [e.id, e]));
+      dataCache.categories = new Map(categories.results.map(c => [c.id, c]));
+      dataCache.lastFetch = now;
+      
+      return dataCache;
+    } catch (error) {
+      console.error('Erro ao buscar dados auxiliares:', error);
+      return dataCache;
+    }
+  }
+  
+  function processExercise(apiExercise, auxiliaryData) {
+    const muscleNames = apiExercise.muscles.map(id => 
+      auxiliaryData.muscles.get(id)?.name || 'Unknown'
+    );
+    
+    const equipmentNames = apiExercise.equipment.map(id => 
+      auxiliaryData.equipment.get(id)?.name || 'Sem equipamento'
+    );
+    
+    const categoryName = auxiliaryData.categories.get(apiExercise.category)?.name || 'Other';
+    
+    let difficulty = 'Intermediário';
+    if (apiExercise.equipment.length === 0) {
+      difficulty = 'Iniciante';
+    } else if (apiExercise.equipment.length > 1 || muscleNames.length > 2) {
+      difficulty = 'Avançado';
+    }
+    
+    return {
+      id: apiExercise.id,
+      name: apiExercise.name,
+      description: apiExercise.description ? cleanHtmlText(apiExercise.description) : 'Sem descrição disponível.',
+      muscleGroup: muscleNames[0] || categoryName,
+      muscles: muscleNames,
+      equipment: equipmentNames,
+      difficulty: difficulty,
+      image: apiExercise.images && apiExercise.images.length > 0 ? 
+             apiExercise.images[0].image : 
+             'https://via.placeholder.com/400x300?text=Sem+imagem'
+    };
+  }
+  
+  function cleanHtmlText(html) {
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    return temp.textContent || temp.innerText || '';
   }
   
   window.api = {
@@ -222,10 +315,13 @@
     logout,
     isAuthenticated,
     getExercises,
+    getExerciseInfo,
     getExerciseById,
     getExerciseImages,
     getExerciseCategories,
     getEquipment,
-    getMuscles
+    getMuscles,
+    getAuxiliaryData,
+    processExercise
   };
 })();
