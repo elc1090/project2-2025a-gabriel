@@ -17,7 +17,7 @@
   <header class="header">
     <div class="container header__container">
       <a href="index.html" class="logo">
-        <img src="#" alt="FitCat" class="logo__image">
+        <img src="assets/favicon.jpg" alt="FitCat" class="logo__image">
         <span class="logo__text">FitCat</span>
       </a>
       
@@ -71,43 +71,6 @@
       </div>
       
       <div class="exercise-grid" id="favorites-grid">
-        <article class="exercise-card" data-id="1" data-muscle="chest">
-          <div class="exercise-card__image-container">
-            <img src="https://placehold.co/400x300" alt="Supino Reto" class="exercise-card__image">
-            <span class="exercise-card__badge exercise-card__badge--intermediate">Intermediário</span>
-          </div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__title">Supino Reto com Barra</h3>
-            <p class="exercise-card__description">
-              O supino reto é um exercício composto que trabalha principalmente os músculos peitorais, com ênfase na parte média do peito, além de envolver os tríceps e os deltoides anteriores.
-            </p>
-            <div class="exercise-card__footer">
-              <span class="exercise-card__muscle-group">Peito</span>
-              <button class="exercise-card__favorite active" aria-label="Remover dos favoritos">
-                <i class="fa-solid fa-star"></i>
-              </button>
-            </div>
-          </div>
-        </article>
-        
-        <article class="exercise-card" data-id="4" data-muscle="shoulders">
-          <div class="exercise-card__image-container">
-            <img src="https://placehold.co/400x300" alt="Desenvolvimento" class="exercise-card__image">
-            <span class="exercise-card__badge exercise-card__badge--intermediate">Intermediário</span>
-          </div>
-          <div class="exercise-card__body">
-            <h3 class="exercise-card__title">Desenvolvimento com Halteres</h3>
-            <p class="exercise-card__description">
-              O desenvolvimento com halteres é um exercício que trabalha principalmente os músculos dos ombros (deltoides), com ênfase na porção anterior e média.
-            </p>
-            <div class="exercise-card__footer">
-              <span class="exercise-card__muscle-group">Ombros</span>
-              <button class="exercise-card__favorite active" aria-label="Remover dos favoritos">
-                <i class="fa-solid fa-star"></i>
-              </button>
-            </div>
-          </div>
-        </article>
         
         <div class="empty-state" id="empty-favorites" style="display: none; grid-column: 1 / -1;">
           <div class="empty-state__icon">
@@ -156,6 +119,7 @@
     </ul>
   </nav>
   
+  <!-- Footer -->
   <footer class="footer">
     <div class="container footer__container">
       <div class="footer__logo">
@@ -176,6 +140,7 @@
     </div>
   </footer>
   
+  <!-- Toast de notificação -->
   <div class="toast-container" id="toast-container">
   </div>
   

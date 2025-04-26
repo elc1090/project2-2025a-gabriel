@@ -1,6 +1,7 @@
 (function() {
   'use strict';
   
+  // Elementos da UI
   const elements = {
     exerciseGrid: document.getElementById('exercise-grid'),
     favoritesGrid: document.getElementById('favorites-grid'),
@@ -114,6 +115,7 @@
   function initExercisesView() {
     simulateLoading();
     
+    
     setupExerciseCards();
   }
   
@@ -127,9 +129,67 @@
     } else {
       const sortOption = elements.sortFavorites ? elements.sortFavorites.value : 'name';
       const sortedFavorites = storage.favorites.sort(sortOption);
-
-      setupExerciseCards();
+      
+      renderFavorites(sortedFavorites);
     }
+  }
+
+  function renderFavorites(favorites) {
+    if (!elements.favoritesGrid) return;
+    
+    elements.favoritesGrid.innerHTML = '';
+    
+    if (elements.emptyFavorites) {
+      elements.emptyFavorites.style.display = 'none';
+    }
+    
+    favorites.forEach(exercise => {
+      const card = createExerciseCard(exercise, true);
+      elements.favoritesGrid.appendChild(card);
+    });
+    
+    setupExerciseCards();
+  }
+  
+  function createExerciseCard(exercise, isFavorite = false) {
+    const card = document.createElement('article');
+    card.className = 'exercise-card';
+    card.dataset.id = exercise.id;
+    card.dataset.muscle = exercise.muscleGroup.toLowerCase();
+    
+    let difficultyClass = 'intermediate';
+    if (exercise.difficulty.toLowerCase().includes('iniciante')) {
+      difficultyClass = 'beginner';
+    } else if (exercise.difficulty.toLowerCase().includes('avançado')) {
+      difficultyClass = 'advanced';
+    }
+    
+    card.innerHTML = `
+      <div class="exercise-card__image-container">
+        <img src="${exercise.image}" alt="${exercise.name}" class="exercise-card__image">
+        <span class="exercise-card__badge exercise-card__badge--${difficultyClass}">${exercise.difficulty}</span>
+      </div>
+      <div class="exercise-card__body">
+        <h3 class="exercise-card__title">${exercise.name}</h3>
+        <p class="exercise-card__description">
+          ${exercise.description}
+        </p>
+        <div class="exercise-card__footer">
+          <span class="exercise-card__muscle-group">${exercise.muscleGroup}</span>
+          <button class="exercise-card__favorite ${isFavorite ? 'active' : ''}" aria-label="${isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}">
+            <i class="${isFavorite ? 'fa-solid' : 'fa-regular'} fa-star"></i>
+          </button>
+        </div>
+      </div>
+    `;
+    
+    const muscleGroupId = getMuscleGroupId(exercise.muscleGroup);
+    if (state.muscleGroups[muscleGroupId]) {
+      card.style.setProperty('--muscle-color', state.muscleGroups[muscleGroupId].color);
+      card.style.setProperty('--card-before-background', state.muscleGroups[muscleGroupId].color);
+    }
+    
+    return card;
   }
   
   function setupExerciseCards() {
@@ -357,7 +417,8 @@
     
     storage.preferences.set('sortOption', sortBy);
     
-    simulateLoading();
+    const sortedFavorites = storage.favorites.sort(sortBy);
+    renderFavorites(sortedFavorites);
   }
   
   function toggleFavorite(card) {
@@ -376,30 +437,33 @@
                   card.querySelector('.exercise-card__badge').textContent : 'Intermediário'
     };
     
-    const isFavorite = storage.favorites.toggle(exerciseData);
+    const isFavorite = storage.favorites.toggle(      exerciseData);
     
     updateFavoriteButton(favoriteBtn, isFavorite);
     
     if (isFavorite) {
       showToast('Adicionado', 'Exercício adicionado aos favoritos!', 'success');
+      
+      updateFilterCounts();
     } else {
       showToast('Removido', 'Exercício removido dos favoritos!', 'info');
       
       if (state.currentView === 'favorites') {
         const favorites = storage.favorites.getAll();
-        if (favorites.length === 0) {
-          showEmptyFavorites();
-        }
         
         card.style.opacity = '0';
         card.style.transform = 'scale(0.8)';
         setTimeout(() => {
           card.remove();
+          
+          if (favorites.length === 0) {
+            showEmptyFavorites();
+          }
         }, 300);
       }
     }
   }
-  
+
   function updateFavoriteButton(button, isFavorite) {
     if (!button) return;
     
@@ -414,7 +478,21 @@
   function clearAllFavorites() {
     if (confirm('Tem certeza de que deseja remover todos os exercícios favoritos?')) {
       storage.favorites.clear();
-      showEmptyFavorites();
+      
+      const cards = elements.favoritesGrid.querySelectorAll('.exercise-card');
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.8)';
+          setTimeout(() => {
+            card.remove();
+            if (index === cards.length - 1) {
+              showEmptyFavorites();
+            }
+          }, 300);
+        }, index * 100);
+      });
+      
       showToast('Favoritos Limpos', 'Todos os favoritos foram removidos!', 'info');
     }
   }
@@ -435,7 +513,7 @@
     if (state.currentView === 'exercises' && elements.exerciseGrid) {
     }
   }
-  
+
   function handleWindowResize() {
     if (window.innerWidth >= 768 && state.sidebarOpen) {
       closeSidebar();
@@ -539,6 +617,24 @@
     return muscleMap[normalizedName] || 1;
   }
   
+  function updateFilterCounts() {
+    const favorites = storage.favorites.getAll();
+    
+    const muscleCounts = {};
+    favorites.forEach(exercise => {
+      const muscle = exercise.muscleGroup.toLowerCase();
+      muscleCounts[muscle] = (muscleCounts[muscle] || 0) + 1;
+    });
+    
+    document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
+      const filterValue = checkbox.querySelector('.filter-checkbox__input').value;
+      const countElement = checkbox.querySelector('.filter-checkbox__count');
+      
+      if (countElement && checkbox.querySelector('.filter-checkbox__input').name === 'muscle') {
+        const count = muscleCounts[filterValue] || 0;
+      }
+    });
+  }
   document.head.insertAdjacentHTML('beforeend', `
     <style>
       .no-scroll {

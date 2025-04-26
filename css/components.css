@@ -1,5 +1,6 @@
 @import url('./variables.css');
 
+/* Cards de exercícios */
 .exercise-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -27,7 +28,7 @@
   left: 0;
   width: 6px;
   height: 100%;
-  background-color: var(--color-muscle-chest);
+  background-color: var(--card-before-background, var(--color-muscle-chest)); /* Usa variável dinâmica */
   transition: background-color var(--transition-normal);
 }
 
@@ -38,7 +39,7 @@
 
 .exercise-card__image-container {
   position: relative;
-  padding-top: 66%;
+  padding-top: 66%; /* Proporção 3:2 */
   overflow: hidden;
 }
 
@@ -149,6 +150,7 @@
   background-color: var(--color-intensity-advanced);
 }
 
+/* Filtros */
 .filter-group {
   margin-bottom: var(--spacing-lg);
 }
@@ -229,6 +231,7 @@
   color: var(--color-text-tertiary);
 }
 
+/* Filtros rápidos */
 .chip-container {
   display: flex;
   flex-wrap: wrap;
@@ -266,6 +269,7 @@
   font-size: var(--fs-xs);
 }
 
+/* Barra de pesquisa */
 .search-bar {
   position: relative;
   margin-bottom: var(--spacing-lg);
@@ -274,7 +278,7 @@
 .search-input {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-lg);
-  padding-left: calc(var(--spacing-lg) + 20px);
+  padding-left: calc(var(--spacing-lg) + 20px); /* Espaço para o ícone */
   border-radius: var(--radius-lg);
   border: 2px solid var(--color-border);
   background-color: var(--color-background);
@@ -303,6 +307,7 @@
   color: var(--color-primary);
 }
 
+/* Paginação */
 .pagination {
   display: flex;
   justify-content: center;
@@ -347,6 +352,7 @@
   cursor: not-allowed;
 }
 
+/* Loading spinner */
 .spinner {
   display: inline-block;
   width: 24px;
@@ -370,6 +376,7 @@
   padding: var(--spacing-xl);
 }
 
+/* Estado vazio */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -397,6 +404,7 @@
   margin-bottom: var(--spacing-lg);
 }
 
+/* Toast de notificação */
 .toast-container {
   position: fixed;
   bottom: 24px;
