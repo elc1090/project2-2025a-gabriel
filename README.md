@@ -31,9 +31,9 @@ Substitua este texto por uma descrição do processo de desenvolvimento, explica
 
 #### Tecnologias
 
-- Html  
+- HTML  
 - CSS  
-- javascript
+- JavaScript
 - [Claude.ai](https://claude.ai/)
 
 #### Ambiente de desenvolvimento
