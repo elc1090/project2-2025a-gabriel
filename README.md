@@ -31,16 +31,15 @@ Substitua este texto por uma descrição do processo de desenvolvimento, explica
 
 #### Tecnologias
 
-Substitua este trecho por uma lista detalhada de tecnologias usadas (tanto as básicas, como HTML e CSS, como as mais específicas, por exemplo algum framework para frontend, etc.):
-- ...
-- ...
-- 
+- Html  
+- CSS  
+- javascript
+- [Claude.ai](https://claude.ai/)
 
 #### Ambiente de desenvolvimento
 
-Substitua este trecho por uma lista detalhada dos ambientes/ferramentas de desenvolvimento utilizadas (por exemplo, VS Code + alguma extensão, etc.)
-- ...
-- ...
+- [Vscode](https://code.visualstudio.com/)   
+- [VScode Live Preview](https://marketplace.visualstudio.com/items?itemName=ms-vscode.live-server)   
 
 #### Referências e créditos
 
