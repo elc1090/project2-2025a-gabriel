@@ -293,7 +293,7 @@ function processExercise(apiExercise, auxiliaryData) {
 
     const equipmentNames = equipmentIds.map(id =>
         auxiliaryData.equipment.get(id)?.name || 'Sem equipamento'
-    ).filter(name => name !== 'none (bodyweight exercise)'); // Filtrar "none"
+    ).filter(name => name !== 'none (bodyweight exercise)');
 
     const categoryName = auxiliaryData.categories.get(apiExercise.category?.id)?.name || 'Other';
 

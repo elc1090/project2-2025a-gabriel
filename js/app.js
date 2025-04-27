@@ -73,16 +73,29 @@
      }
     
     setupEventListeners();
-    
-    if (state.currentView === 'favorites') {
-      if (elements.favoritesGrid) {
-        elements.favoritesGrid.innerHTML = '';
-      }
-      initFavoritesView();
-    } else {
-      initExercisesView();
+
+    try {
+         state.auxiliaryData = await api.getAuxiliaryData();
+
+         populateFiltersDynamically();
+         populateCategoryChips();
+
+         if (state.currentView === 'favorites') {
+             if (elements.favoritesGrid) {
+                 elements.favoritesGrid.innerHTML = '';
+             }
+             initFavoritesView();
+         } else {
+             initExercisesView();
+         }
+    } catch (error) {
+         console.error("Falha ao carregar dados auxiliares ou inicializar:", error);
+         showToast('Erro', 'Falha ao inicializar a aplicação.', 'error');
+         if (elements.exerciseGrid) {
+             elements.exerciseGrid.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar dados iniciais. Tente recarregar a página.</p>';
+         }
     }
-  }
+}
   
   function populateFiltersDynamically() {
     const muscleListElement = document.getElementById('muscle-filter-list');
@@ -118,7 +131,7 @@
     });
 
     document.querySelectorAll('.filter-checkbox__input').forEach(checkbox => {
-        checkbox.removeEventListener('change', handleFilterChange); // Remove listener antigo se houver
+        checkbox.removeEventListener('change', handleFilterChange);
         checkbox.addEventListener('change', handleFilterChange);
     });
 }
@@ -159,6 +172,12 @@
     if (elements.sortFavorites) {
       elements.sortFavorites.addEventListener('change', handleSortFavorites);
     }
+	
+     document.querySelectorAll('#chip-container .chip[data-filter-type="all"], #chip-container .chip[data-filter-type="no-equipment"]').forEach(chip => {
+         const newChip = chip.cloneNode(true);
+         chip.parentNode.replaceChild(newChip, chip);
+         newChip.addEventListener('click', handleChipFilter);
+     });
     
     document.addEventListener('click', (e) => {
       if (state.sidebarOpen && window.innerWidth < 768) {
@@ -194,30 +213,33 @@
 async function loadExercises(page = 1, filters = state.filters) {
     try {
         showLoading();
-
         const offset = (page - 1) * state.itemsPerPage;
 
         const apiParams = {
             limit: state.itemsPerPage,
             offset: offset,
-            language: 2
+            language: 4
         };
 
         if (filters.muscles && filters.muscles.length > 0) {
             apiParams.muscles = filters.muscles.join(',');
         }
-
         if (filters.equipment && filters.equipment.length > 0) {
             apiParams.equipment = filters.equipment.join(',');
+        }
+        if (filters.category) {
+            apiParams.category = filters.category;
         }
          if (state.searchQuery) {
              apiParams.search = state.searchQuery;
          }
+
         const response = await api.getExerciseInfo(apiParams);
 
         if (!state.auxiliaryData) {
              state.auxiliaryData = await api.getAuxiliaryData();
         }
+
 
         state.exercises = response.results.map(exercise =>
             api.processExercise(exercise, state.auxiliaryData)
@@ -232,13 +254,13 @@ async function loadExercises(page = 1, filters = state.filters) {
         updatePaginationControls();
 
     } catch (error) {
-        console.error('Erro ao carregar exercícios:', error);
-        showToast('Erro', 'Falha ao carregar exercícios.', 'error');
-        elements.exerciseGrid.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar exercícios.</p>'; // Mensagem de erro na grade
-    } finally {
-        hideLoading();
-    }
-}
+         console.error('Erro ao carregar exercícios:', error);
+         showToast('Erro', 'Falha ao carregar exercícios.', 'error');
+         if(elements.exerciseGrid) elements.exerciseGrid.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar exercícios.</p>';
+     } finally {
+         hideLoading();
+     }
+ }
   
   function renderExercises(exercises) {
     if (!elements.exerciseGrid) return;
@@ -340,11 +362,11 @@ async function loadExercises(page = 1, filters = state.filters) {
   function initFavoritesView() {
     if (!elements.favoritesGrid) return;
     
-    console.log('Inicializando página de favoritos'); // Debug
+    console.log('Inicializando página de favoritos');
     
     const favorites = storage.favorites.getAll();
     
-    console.log('Favoritos carregados:', favorites); // Debug
+    console.log('Favoritos carregados:', favorites);
     
     if (favorites.length === 0) {
       showEmptyFavorites();
@@ -571,8 +593,8 @@ async function loadExercises(page = 1, filters = state.filters) {
   
 function handleFilterChange(e) {
     const checkbox = e.target;
-    const filterType = checkbox.name; // 'muscles' ou 'equipment'
-    const filterValue = checkbox.value; // ID numérico como string
+    const filterType = checkbox.name;
+    const filterValue = checkbox.value;
     const isChecked = checkbox.checked;
 
     if (!state.filters[filterType]) {
@@ -592,27 +614,64 @@ function handleFilterChange(e) {
     loadExercises(1, state.filters);
 }
   
-  function handleChipFilter(e) {
-    const chip = e.currentTarget;
-    
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    
-    chip.classList.add('active');
-    
-    const filterValue = chip.textContent.trim();
-    
-    simulateLoading();
-    
-    if (window.innerWidth < 768) {
-      closeSidebar();
+	function handleChipFilter(e) {
+		const chip = e.currentTarget;
+		const filterType = chip.dataset.filterType;
+
+		state.filters = {
+			 muscles: [],
+			 equipment: [],
+			 category: null
+		 };
+		 document.querySelectorAll('.filter-checkbox__input').forEach(cb => cb.checked = false);
+
+
+		if (filterType === 'all') {
+			 state.filters.category = null;
+			 state.filters.equipment = [];
+		} else if (filterType === 'no-equipment') {
+			 state.filters.equipment = ['7'];
+			 state.filters.category = null;
+		} else if (filterType === 'category') {
+			 state.filters.category = chip.dataset.categoryId;
+			 state.filters.equipment = [];
+		}
+
+		document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+		chip.classList.add('active');
+
+		loadExercises(1, state.filters);
+
+		if (window.innerWidth < 768) {
+			closeSidebar();
+		}
+	}
+  
+	 function populateCategoryChips() {
+		const chipContainer = document.getElementById('chip-container');
+		if (!chipContainer || !state.auxiliaryData || !state.auxiliaryData.categories) {
+			console.warn('Não foi possível popular os chips de categoria.');
+			return;
     }
-  }
+
+    state.auxiliaryData.categories.forEach(category => {
+        const chip = document.createElement('button');
+        chip.className = 'chip';
+        chip.dataset.filterType = 'category';
+        chip.dataset.categoryId = category.id;
+        chip.textContent = category.name;
+
+        chip.addEventListener('click', handleChipFilter);
+        chipContainer.appendChild(chip);
+    });
+}
   
  function handleSearch(e) {
      state.searchQuery = e.target.value.trim();
      loadExercises(1, state.filters);
  }
 
+  
   function handleSortFavorites(e) {
     const sortBy = e.target.value;
     
@@ -636,7 +695,7 @@ function handleFilterChange(e) {
       image: card.querySelector('.exercise-card__image').src,
     };
     
-    console.log('Dados do exercício sendo favoritado:', exerciseData); // Debug
+    console.log('Dados do exercício sendo favoritado:', exerciseData);
     
     const isFavorite = storage.favorites.toggle(exerciseData);
     
@@ -711,6 +770,8 @@ function handleFilterChange(e) {
     state.isLoading = true;
     
     if (state.currentView === 'exercises' && elements.exerciseGrid) {
+      
+      
     }
   }
   
