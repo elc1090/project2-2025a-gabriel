@@ -14,6 +14,7 @@
     detailPanelClose: document.getElementById('detail-panel-close'),
     filterBtnMobile: document.getElementById('filter-btn-mobile'),
     clearFavorites: document.getElementById('clear-favorites'),
+	clearFiltersBtn: document.getElementById('clear-filters-btn'),
     sortFavorites: document.getElementById('sort-favorites'),
     
     emptyFavorites: document.getElementById('empty-favorites'),
@@ -31,7 +32,7 @@
     detailOpen: false,
     sidebarOpen: false,
     selectedExercise: null,
-    filters: storage.filters.get(),
+    filters: { muscles: [], equipment: [], category: null },
     exercises: [],
     searchQuery: '',
     auxiliaryData: null,
@@ -134,6 +135,36 @@ async function init() {
         checkbox.addEventListener('change', handleFilterChange);
     });
 }
+
+	function handleClearFiltersClick() {
+		console.log("--- Limpar Filtros Clicado ---"); // Debug
+
+		state.filters = { muscles: [], equipment: [], category: null };
+
+		document.querySelectorAll('#muscle-filter-list .filter-checkbox__input, #equipment-filter-list .filter-checkbox__input').forEach(checkbox => {
+			checkbox.checked = false;
+		});
+
+		document.querySelectorAll('#chip-container .chip').forEach(chip => {
+			if (chip.dataset.filterType === 'all') {
+				chip.classList.add('active');
+			} else {
+				chip.classList.remove('active');
+			}
+		});
+
+		if (elements.searchInput) {
+			elements.searchInput.value = '';
+			state.searchQuery = '';
+		}
+
+
+		loadExercises(1, state.filters);
+
+		if (window.innerWidth < 768 && state.sidebarOpen) {
+			closeSidebar();
+		}
+	}
   
   function setupEventListeners() {
     if (elements.navToggle) {
@@ -154,6 +185,10 @@ async function init() {
     
     if (elements.searchInput) {
       elements.searchInput.addEventListener('input', debounce(handleSearch, 500));
+    }
+	
+    if (elements.clearFiltersBtn) {
+        elements.clearFiltersBtn.addEventListener('click', handleClearFiltersClick);
     }
     
     document.querySelectorAll('.filter-checkbox__input').forEach(checkbox => {
@@ -617,8 +652,6 @@ function handleFilterChange(e) {
     } else {
         state.filters[filterType] = state.filters[filterType].filter(val => val !== filterValue);
     }
-
-    storage.filters.update(state.filters);
 
     loadExercises(1, state.filters);
 }
