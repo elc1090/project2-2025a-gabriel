@@ -209,6 +209,14 @@
     };
     
     const queryParams = { ...defaultParams, ...params };
+
+    Object.keys(queryParams).forEach(key => {
+        if (queryParams[key] === undefined || queryParams[key] === null || queryParams[key] === '') {
+            delete queryParams[key];
+        }
+    });
+
+
     return fetchWithAuth(API_CONFIG.endpoints.exerciseInfo, { method: 'GET' }, false, queryParams);
   }
   
@@ -262,41 +270,47 @@
       return dataCache;
     } catch (error) {
       console.error('Erro ao buscar dados auxiliares:', error);
-      return dataCache; // Retornar cache antigo em caso de erro
+      return dataCache;
     }
   }
   
-  function processExercise(apiExercise, auxiliaryData) {
-    const muscleNames = apiExercise.muscles.map(id => 
-      auxiliaryData.muscles.get(id)?.name || 'Unknown'
-    );
-    
-    const equipmentNames = apiExercise.equipment.map(id => 
-      auxiliaryData.equipment.get(id)?.name || 'Sem equipamento'
-    );
-    
-    const categoryName = auxiliaryData.categories.get(apiExercise.category)?.name || 'Other';
-    
-    let difficulty = 'Intermediário';
-    if (apiExercise.equipment.length === 0) {
-      difficulty = 'Iniciante';
-    } else if (apiExercise.equipment.length > 1 || muscleNames.length > 2) {
-      difficulty = 'Avançado';
+function processExercise(apiExercise, auxiliaryData) {
+    const targetLanguageId = 2;
+    let translation = apiExercise.translations.find(t => t.language === targetLanguageId);
+    if (!translation && apiExercise.translations.length > 0) {
+        translation = apiExercise.translations[0];
     }
-    
+
+    const exerciseName = translation ? translation.name : 'Nome Indisponível';
+    const exerciseDescription = translation ? cleanHtmlText(translation.description) : 'Sem descrição disponível.';
+
+    const muscleIds = apiExercise.muscles.map(m => typeof m === 'object' ? m.id : m);
+    const equipmentIds = apiExercise.equipment.map(e => typeof e === 'object' ? e.id : e);
+
+    const muscleNames = muscleIds.map(id =>
+        auxiliaryData.muscles.get(id)?.name || 'Unknown'
+    );
+
+    const equipmentNames = equipmentIds.map(id =>
+        auxiliaryData.equipment.get(id)?.name || 'Sem equipamento'
+    ).filter(name => name !== 'none (bodyweight exercise)'); // Filtrar "none"
+
+    const categoryName = auxiliaryData.categories.get(apiExercise.category?.id)?.name || 'Other';
+
+    const mainImage = apiExercise.images?.find(img => img.is_main);
+    const imageUrl = mainImage ? mainImage.image : (apiExercise.images?.length > 0 ? apiExercise.images[0].image : 'https://placehold.co/400x300');
+
+
     return {
-      id: apiExercise.id,
-      name: apiExercise.name,
-      description: apiExercise.description ? cleanHtmlText(apiExercise.description) : 'Sem descrição disponível.',
-      muscleGroup: muscleNames[0] || categoryName,
-      muscles: muscleNames,
-      equipment: equipmentNames,
-      difficulty: difficulty,
-      image: apiExercise.images && apiExercise.images.length > 0 ? 
-             apiExercise.images[0].image : 
-             'https://placehold.co/400x300'
+        id: apiExercise.id,
+        name: exerciseName,
+        description: exerciseDescription || 'Sem descrição disponível.',
+        muscleGroup: muscleNames[0] || categoryName,
+        muscles: muscleNames.length > 0 ? muscleNames : [categoryName],
+        equipment: equipmentNames.length > 0 ? equipmentNames : ['Peso Corporal'],
+        image: imageUrl
     };
-  }
+}
   
   function cleanHtmlText(html) {
     const temp = document.createElement('div');

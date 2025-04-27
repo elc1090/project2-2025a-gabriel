@@ -71,149 +71,70 @@
         </button>
       </div>
       
-      <div class="filter-group">
-        <h3 class="filter-group__title">Grupos Musculares</h3>
-        <ul class="filter-list">
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="muscle" value="chest">
-              <span class="filter-checkbox__label">
-                Peito
-                <span class="filter-checkbox__count">24</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="muscle" value="back">
-              <span class="filter-checkbox__label">
-                Costas
-                <span class="filter-checkbox__count">18</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="muscle" value="arms">
-              <span class="filter-checkbox__label">
-                Braços
-                <span class="filter-checkbox__count">32</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="muscle" value="legs">
-              <span class="filter-checkbox__label">
-                Pernas
-                <span class="filter-checkbox__count">29</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="muscle" value="shoulders">
-              <span class="filter-checkbox__label">
-                Ombros
-                <span class="filter-checkbox__count">16</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="muscle" value="core">
-              <span class="filter-checkbox__label">
-                Abdômen
-                <span class="filter-checkbox__count">22</span>
-              </span>
-            </label>
-          </li>
-        </ul>
-      </div>
-      
-      <div class="filter-group">
-        <h3 class="filter-group__title">Equipamentos</h3>
-        <ul class="filter-list">
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="equipment" value="barbell">
-              <span class="filter-checkbox__label">
-                Barra
-                <span class="filter-checkbox__count">28</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="equipment" value="dumbbell">
-              <span class="filter-checkbox__label">
-                Halteres
-                <span class="filter-checkbox__count">42</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="equipment" value="machine">
-              <span class="filter-checkbox__label">
-                Máquinas
-                <span class="filter-checkbox__count">36</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="equipment" value="cable">
-              <span class="filter-checkbox__label">
-                Cabos
-                <span class="filter-checkbox__count">19</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="equipment" value="bodyweight">
-              <span class="filter-checkbox__label">
-                Peso Corporal
-                <span class="filter-checkbox__count">23</span>
-              </span>
-            </label>
-          </li>
-        </ul>
-      </div>
-      
-      <div class="filter-group">
-        <h3 class="filter-group__title">Nível de Dificuldade</h3>
-        <ul class="filter-list">
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="difficulty" value="beginner">
-              <span class="filter-checkbox__label">
-                Iniciante
-                <span class="filter-checkbox__count">45</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="difficulty" value="intermediate">
-              <span class="filter-checkbox__label">
-                Intermediário
-                <span class="filter-checkbox__count">68</span>
-              </span>
-            </label>
-          </li>
-          <li class="filter-item">
-            <label class="filter-checkbox">
-              <input type="checkbox" class="filter-checkbox__input" name="difficulty" value="advanced">
-              <span class="filter-checkbox__label">
-                Avançado
-                <span class="filter-checkbox__count">27</span>
-              </span>
-            </label>
-          </li>
-        </ul>
-      </div>
+<div class="filter-group">
+   <h3 class="filter-group__title">Grupos Musculares</h3>
+   <ul class="filter-list" id="muscle-filter-list"> <li class="filter-item">
+       <label class="filter-checkbox">
+         <input type="checkbox" class="filter-checkbox__input" name="muscles" value="4"> <span class="filter-checkbox__label">Peito</span>
+       </label>
+     </li>
+     <li class="filter-item">
+       <label class="filter-checkbox">
+         <input type="checkbox" class="filter-checkbox__input" name="muscles" value="12"> <span class="filter-checkbox__label">Costas</span>
+       </label>
+     </li>
+      <li class="filter-item">
+         <label class="filter-checkbox">
+             <input type="checkbox" class="filter-checkbox__input" name="muscles" value="8"> <span class="filter-checkbox__label">Braços</span>
+         </label>
+     </li>
+      <li class="filter-item">
+         <label class="filter-checkbox">
+             <input type="checkbox" class="filter-checkbox__input" name="muscles" value="9"> <span class="filter-checkbox__label">Pernas</span>
+         </label>
+     </li>
+     <li class="filter-item">
+       <label class="filter-checkbox">
+         <input type="checkbox" class="filter-checkbox__input" name="muscles" value="2"> <span class="filter-checkbox__label">Ombros</span>
+       </label>
+     </li>
+     <li class="filter-item">
+       <label class="filter-checkbox">
+         <input type="checkbox" class="filter-checkbox__input" name="muscles" value="6"> <span class="filter-checkbox__label">Abdômen</span>
+       </label>
+     </li>
+   </ul>
+ </div>
+
+ <div class="filter-group">
+   <h3 class="filter-group__title">Equipamentos</h3>
+   <ul class="filter-list" id="equipment-filter-list"> <li class="filter-item">
+       <label class="filter-checkbox">
+         <input type="checkbox" class="filter-checkbox__input" name="equipment" value="1"> <span class="filter-checkbox__label">Barra</span>
+       </label>
+     </li>
+     <li class="filter-item">
+       <label class="filter-checkbox">
+         <input type="checkbox" class="filter-checkbox__input" name="equipment" value="3"> <span class="filter-checkbox__label">Halteres</span>
+       </label>
+     </li>
+     <li class="filter-item">
+         <label class="filter-checkbox">
+             <input type="checkbox" class="filter-checkbox__input" name="equipment" value="9"> <span class="filter-checkbox__label">Máquinas</span>
+         </label>
+     </li>
+     <li class="filter-item">
+         <label class="filter-checkbox">
+             <input type="checkbox" class="filter-checkbox__input" name="equipment" value="2"> <span class="filter-checkbox__label">Cabos</span>
+         </label>
+     </li>
+     <li class="filter-item">
+       <label class="filter-checkbox">
+         <input type="checkbox" class="filter-checkbox__input" name="equipment" value="7"> <span class="filter-checkbox__label">Peso Corporal</span>
+       </label>
+     </li>
+   </ul>
+ </div>
       
       <button class="btn btn-outline">
         <i class="fa-solid fa-filter-circle-xmark btn-icon"></i> Limpar Filtros

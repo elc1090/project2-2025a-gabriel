@@ -1,4 +1,3 @@
-
 (function() {
   'use strict';
   
@@ -57,10 +56,21 @@
     }
   };
   
-  function init() {
+  async function init() {
     if (!storage.isAvailable()) {
       showToast('Atenção', 'O armazenamento local não está disponível. Suas preferências não serão salvas.', 'warning');
     }
+    
+     if (state.currentView === 'exercises') {
+         try {
+             state.auxiliaryData = await api.getAuxiliaryData();
+             populateFiltersDynamically();
+         } catch(error) {
+             console.error("Falha ao carregar dados auxiliares:", error);
+             showToast('Erro', 'Falha ao carregar dados para filtros.', 'error');
+         }
+         initExercisesView();
+     }
     
     setupEventListeners();
     
@@ -73,6 +83,45 @@
       initExercisesView();
     }
   }
+  
+  function populateFiltersDynamically() {
+    const muscleListElement = document.getElementById('muscle-filter-list');
+    const equipmentListElement = document.getElementById('equipment-filter-list');
+
+    if (!muscleListElement || !equipmentListElement || !state.auxiliaryData) return;
+
+    muscleListElement.innerHTML = '';
+    equipmentListElement.innerHTML = '';
+
+    state.auxiliaryData.muscles.forEach(muscle => {
+        const li = document.createElement('li');
+        li.className = 'filter-item';
+        li.innerHTML = `
+            <label class="filter-checkbox">
+              <input type="checkbox" class="filter-checkbox__input" name="muscles" value="${muscle.id}">
+              <span class="filter-checkbox__label">${muscle.name}</span>
+            </label>
+        `;
+        muscleListElement.appendChild(li);
+    });
+
+    state.auxiliaryData.equipment.forEach(equip => {
+         const li = document.createElement('li');
+         li.className = 'filter-item';
+         li.innerHTML = `
+             <label class="filter-checkbox">
+               <input type="checkbox" class="filter-checkbox__input" name="equipment" value="${equip.id}">
+               <span class="filter-checkbox__label">${equip.name}</span>
+             </label>
+         `;
+         equipmentListElement.appendChild(li);
+    });
+
+    document.querySelectorAll('.filter-checkbox__input').forEach(checkbox => {
+        checkbox.removeEventListener('change', handleFilterChange); // Remove listener antigo se houver
+        checkbox.addEventListener('change', handleFilterChange);
+    });
+}
   
   function setupEventListeners() {
     if (elements.navToggle) {
@@ -142,35 +191,54 @@
     }
   }
   
-  async function loadExercises(page = 1) {
+async function loadExercises(page = 1, filters = state.filters) {
     try {
-      showLoading();
-      
-      const offset = (page - 1) * state.itemsPerPage;
-      const response = await api.getExerciseInfo({
-        limit: state.itemsPerPage,
-        offset: offset
-      });
-      
-      state.exercises = response.results.map(exercise => 
-        api.processExercise(exercise, state.auxiliaryData)
-      );
-      
-      state.currentPage = page;
-      state.totalItems = response.count;
-      state.totalPages = Math.ceil(response.count / state.itemsPerPage);
-      
-      renderExercises(state.exercises);
-      
-      updatePaginationControls();
-      
+        showLoading();
+
+        const offset = (page - 1) * state.itemsPerPage;
+
+        const apiParams = {
+            limit: state.itemsPerPage,
+            offset: offset,
+            language: 2
+        };
+
+        if (filters.muscles && filters.muscles.length > 0) {
+            apiParams.muscles = filters.muscles.join(',');
+        }
+
+        if (filters.equipment && filters.equipment.length > 0) {
+            apiParams.equipment = filters.equipment.join(',');
+        }
+         if (state.searchQuery) {
+             apiParams.search = state.searchQuery;
+         }
+        const response = await api.getExerciseInfo(apiParams);
+
+        if (!state.auxiliaryData) {
+             state.auxiliaryData = await api.getAuxiliaryData();
+        }
+
+        state.exercises = response.results.map(exercise =>
+            api.processExercise(exercise, state.auxiliaryData)
+        );
+
+        state.currentPage = page;
+        state.totalItems = response.count;
+        state.totalPages = Math.ceil(response.count / state.itemsPerPage);
+
+        renderExercises(state.exercises);
+
+        updatePaginationControls();
+
     } catch (error) {
-      console.error('Erro ao carregar exercícios:', error);
-      showToast('Erro', 'Falha ao carregar exercícios.', 'error');
+        console.error('Erro ao carregar exercícios:', error);
+        showToast('Erro', 'Falha ao carregar exercícios.', 'error');
+        elements.exerciseGrid.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar exercícios.</p>'; // Mensagem de erro na grade
     } finally {
-      hideLoading();
+        hideLoading();
     }
-  }
+}
   
   function renderExercises(exercises) {
     if (!elements.exerciseGrid) return;
@@ -315,18 +383,11 @@
     card.className = 'exercise-card';
     card.dataset.id = exercise.id;
     card.dataset.muscle = exercise.muscleGroup.toLowerCase();
-    
-    let difficultyClass = 'intermediate';
-    if (exercise.difficulty.toLowerCase().includes('iniciante')) {
-      difficultyClass = 'beginner';
-    } else if (exercise.difficulty.toLowerCase().includes('avançado')) {
-      difficultyClass = 'advanced';
-    }
+
     
     card.innerHTML = `
       <div class="exercise-card__image-container">
         <img src="${exercise.image}" alt="${exercise.name}" class="exercise-card__image" onerror="this.src='https://via.placeholder.com/400x300?text=Sem+imagem'">
-        <span class="exercise-card__badge exercise-card__badge--${difficultyClass}">${exercise.difficulty}</span>
       </div>
       <div class="exercise-card__body">
         <h3 class="exercise-card__title">${exercise.name}</h3>
@@ -417,7 +478,6 @@
         <h2 class="detail-panel__title">${exercise.name}</h2>
         <div class="detail-panel__meta">
           <span class="detail-panel__muscle">${exercise.muscleGroup}</span>
-          <span class="detail-panel__difficulty">${exercise.difficulty}</span>
         </div>
       </div>
       
@@ -509,29 +569,28 @@
     }
   }
   
-  function handleFilterChange(e) {
+function handleFilterChange(e) {
     const checkbox = e.target;
-    const filterType = checkbox.name;
-    const filterValue = checkbox.value;
+    const filterType = checkbox.name; // 'muscles' ou 'equipment'
+    const filterValue = checkbox.value; // ID numérico como string
     const isChecked = checkbox.checked;
-    
-    const filters = storage.filters.get();
-    
-    if (!filters[filterType]) {
-      filters[filterType] = [];
+
+    if (!state.filters[filterType]) {
+        state.filters[filterType] = [];
     }
-    
-    if (isChecked && !filters[filterType].includes(filterValue)) {
-      filters[filterType].push(filterValue);
-    } else if (!isChecked && filters[filterType].includes(filterValue)) {
-      filters[filterType] = filters[filterType].filter(val => val !== filterValue);
+
+    if (isChecked) {
+        if (!state.filters[filterType].includes(filterValue)) {
+            state.filters[filterType].push(filterValue);
+        }
+    } else {
+        state.filters[filterType] = state.filters[filterType].filter(val => val !== filterValue);
     }
-    
-    storage.filters.update(filters);
-    state.filters = filters;
-    
-    simulateLoading();
-  }
+
+    storage.filters.update(state.filters);
+
+    loadExercises(1, state.filters);
+}
   
   function handleChipFilter(e) {
     const chip = e.currentTarget;
@@ -549,12 +608,11 @@
     }
   }
   
-  function handleSearch(e) {
-    state.searchQuery = e.target.value.trim();
-    
-    simulateLoading();
-  }
-  
+ function handleSearch(e) {
+     state.searchQuery = e.target.value.trim();
+     loadExercises(1, state.filters);
+ }
+
   function handleSortFavorites(e) {
     const sortBy = e.target.value;
     
@@ -576,8 +634,6 @@
       description: card.querySelector('.exercise-card__description').textContent,
       muscleGroup: card.querySelector('.exercise-card__muscle-group').textContent,
       image: card.querySelector('.exercise-card__image').src,
-      difficulty: card.querySelector('.exercise-card__badge') ? 
-                  card.querySelector('.exercise-card__badge').textContent : 'Intermediário'
     };
     
     console.log('Dados do exercício sendo favoritado:', exerciseData); // Debug
