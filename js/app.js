@@ -56,44 +56,43 @@
     }
   };
   
-  async function init() {
+async function init() {
+    console.log("Iniciando aplicação..."); // Debug
     if (!storage.isAvailable()) {
-      showToast('Atenção', 'O armazenamento local não está disponível. Suas preferências não serão salvas.', 'warning');
+        showToast('Atenção', 'O armazenamento local não está disponível. Suas preferências não serão salvas.', 'warning');
     }
-    
-     if (state.currentView === 'exercises') {
-         try {
-             state.auxiliaryData = await api.getAuxiliaryData();
-             populateFiltersDynamically();
-         } catch(error) {
-             console.error("Falha ao carregar dados auxiliares:", error);
-             showToast('Erro', 'Falha ao carregar dados para filtros.', 'error');
-         }
-         initExercisesView();
-     }
-    
+
     setupEventListeners();
+    console.log("Listeners de eventos configurados."); // Debug
 
     try {
-         state.auxiliaryData = await api.getAuxiliaryData();
+        console.log("Carregando dados auxiliares..."); // Debug
+        state.auxiliaryData = await api.getAuxiliaryData();
+        console.log("Dados auxiliares carregados:", state.auxiliaryData); // Debug
 
-         populateFiltersDynamically();
-         populateCategoryChips();
+        console.log("Populando filtros e chips..."); // Debug
+        populateFiltersDynamically();
+        populateCategoryChips();
+        console.log("Filtros e chips populados."); // Debug
 
-         if (state.currentView === 'favorites') {
-             if (elements.favoritesGrid) {
-                 elements.favoritesGrid.innerHTML = '';
-             }
-             initFavoritesView();
-         } else {
-             initExercisesView();
-         }
+        if (state.currentView === 'favorites') {
+            console.log("Inicializando view de Favoritos..."); // Debug
+            if (elements.favoritesGrid) {
+                elements.favoritesGrid.innerHTML = '';
+            }
+            initFavoritesView();
+        } else if (state.currentView === 'exercises') {
+            console.log("Inicializando view de Exercícios..."); // Debug
+            await initExercisesView();
+        }
+         console.log("Inicialização completa."); // Debug
+
     } catch (error) {
-         console.error("Falha ao carregar dados auxiliares ou inicializar:", error);
-         showToast('Erro', 'Falha ao inicializar a aplicação.', 'error');
-         if (elements.exerciseGrid) {
-             elements.exerciseGrid.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar dados iniciais. Tente recarregar a página.</p>';
-         }
+        console.error("Falha ao carregar dados auxiliares ou inicializar view:", error); // Erro mais específico
+        showToast('Erro', 'Falha ao inicializar a aplicação.', 'error');
+        if (elements.exerciseGrid) {
+            elements.exerciseGrid.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar dados iniciais. Tente recarregar a página.</p>';
+        }
     }
 }
   
@@ -222,16 +221,26 @@ async function loadExercises(page = 1, filters = state.filters) {
         };
 
         if (filters.muscles && filters.muscles.length > 0) {
-            apiParams.muscles = filters.muscles.join(',');
+            apiParams.muscles = filters.muscles;
         }
         if (filters.equipment && filters.equipment.length > 0) {
-            apiParams.equipment = filters.equipment.join(',');
+             const validEquipmentIds = filters.equipment.filter(id => !isNaN(parseInt(id)));
+             if (validEquipmentIds.length > 0) {
+                 apiParams.equipment = validEquipmentIds;
+             }
         }
         if (filters.category) {
             apiParams.category = filters.category;
         }
          if (state.searchQuery) {
              apiParams.search = state.searchQuery;
+         }
+		 
+        if (typeof api.getExerciseInfo !== 'function') {
+             console.error('api.getExerciseInfo não é uma função!');
+             showToast('Erro', 'Erro interno na configuração da API.', 'error');
+             hideLoading();
+             return;
          }
 
         const response = await api.getExerciseInfo(apiParams);

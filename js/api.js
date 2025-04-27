@@ -32,9 +32,19 @@
     const url = new URL(API_CONFIG.baseUrl + endpoint);
     
     Object.keys(queryParams).forEach(key => {
-      if (queryParams[key] !== undefined && queryParams[key] !== null) {
-        url.searchParams.append(key, queryParams[key]);
-      }
+        const value = queryParams[key];
+
+        if (value !== undefined && value !== null) {
+            if (Array.isArray(value)) {
+                value.forEach(item => {
+                    if (item !== undefined && item !== null && item !== '') {
+                         url.searchParams.append(key, item);
+                    }
+                });
+            } else if (value !== '') {
+                url.searchParams.append(key, value);
+            }
+        }
     });
     
     return url.toString();
