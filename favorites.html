@@ -50,12 +50,16 @@
         
         <div class="d-flex justify-between align-center" style="margin-top: var(--spacing-lg);">
           <div class="d-flex gap-md">
-            <button class="btn btn-primary">
+            <button class="btn btn-primary" id="export-favorites-btn">
               <i class="fa-solid fa-file-export btn-icon"></i> Exportar Lista
+            </button>
+            <button class="btn btn-secondary" id="import-favorites-btn">
+              <i class="fa-solid fa-file-import btn-icon"></i> Importar Lista
             </button>
             <button class="btn btn-outline" id="clear-favorites">
               <i class="fa-solid fa-trash btn-icon"></i> Limpar Todos
             </button>
+            <input type="file" id="import-file-input" accept=".json" style="display: none;">
           </div>
           
           <div class="d-flex align-center gap-sm">
@@ -63,7 +67,6 @@
             <select id="sort-favorites" class="search-input" style="width: auto; padding: var(--spacing-xs) var(--spacing-md);">
               <option value="name">Nome</option>
               <option value="muscle">Grupo Muscular</option>
-              <option value="difficulty">Dificuldade</option>
               <option value="recent">Mais Recentes</option>
             </select>
           </div>

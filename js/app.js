@@ -16,6 +16,9 @@
     clearFavorites: document.getElementById('clear-favorites'),
 	clearFiltersBtn: document.getElementById('clear-filters-btn'),
     sortFavorites: document.getElementById('sort-favorites'),
+    exportFavoritesBtn: document.getElementById('export-favorites-btn'),
+    importFavoritesBtn: document.getElementById('import-favorites-btn'),
+    importFileInput: document.getElementById('import-file-input'),
     
     emptyFavorites: document.getElementById('empty-favorites'),
     
@@ -89,7 +92,7 @@ async function init() {
          console.log("Inicialização completa."); // Debug
 
     } catch (error) {
-        console.error("Falha ao carregar dados auxiliares ou inicializar view:", error); // Erro mais específico
+        console.error("Falha ao carregar dados auxiliares ou inicializar view:", error);
         showToast('Erro', 'Falha ao inicializar a aplicação.', 'error');
         if (elements.exerciseGrid) {
             elements.exerciseGrid.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar dados iniciais. Tente recarregar a página.</p>';
@@ -209,6 +212,20 @@ async function init() {
       elements.sortFavorites.addEventListener('change', handleSortFavorites);
     }
 	
+    if (elements.exportFavoritesBtn) {
+        elements.exportFavoritesBtn.addEventListener('click', exportFavorites);
+    }
+
+    if (elements.importFavoritesBtn) {
+        elements.importFavoritesBtn.addEventListener('click', () => {
+            elements.importFileInput.click();
+        });
+    }
+
+    if (elements.importFileInput) {
+        elements.importFileInput.addEventListener('change', importFavorites);
+    }
+	
      document.querySelectorAll('#chip-container .chip[data-filter-type="all"], #chip-container .chip[data-filter-type="no-equipment"]').forEach(chip => {
          const newChip = chip.cloneNode(true);
          chip.parentNode.replaceChild(newChip, chip);
@@ -226,6 +243,95 @@ async function init() {
     });
     
     window.addEventListener('resize', handleWindowResize);
+  }
+  
+   function exportFavorites() {
+    const favoritesData = storage.favorites.getAll();
+    if (favoritesData.length === 0) {
+        showToast('Aviso', 'Você não tem favoritos para exportar.', 'warning');
+        return;
+    }
+
+    try {
+        const jsonData = JSON.stringify(favoritesData, null, 2);
+        const blob = new Blob([jsonData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'fitcat-favoritos.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(url);
+        showToast('Exportado', 'Lista de favoritos exportada com sucesso!', 'success');
+
+    } catch (error) {
+        console.error('Erro ao exportar favoritos:', error);
+        showToast('Erro', 'Ocorreu um erro ao exportar seus favoritos.', 'error');
+    }
+  }
+
+  function importFavorites(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.type !== 'application/json') {
+        showToast('Erro', 'Por favor, selecione um arquivo .json válido.', 'error');
+        event.target.value = null;
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+
+            if (!Array.isArray(importedData)) {
+                throw new Error('O arquivo JSON não contém um array de favoritos válido.');
+            }
+
+            const isValid = importedData.every(item =>
+                item &&
+                typeof item.id === 'number' &&
+                typeof item.name === 'string' &&
+                typeof item.description === 'string' &&
+                Array.isArray(item.muscles) &&
+                Array.isArray(item.equipment) &&
+                typeof item.muscleGroup === 'string' &&
+                typeof item.image === 'string'
+            );
+
+            if (!isValid) {
+                 throw new Error('Alguns itens no arquivo JSON não contêm todos os detalhes esperados.');
+            }
+
+            const success = storage.importData(importedData, 'favorites');
+
+            if (success) {
+                showToast('Importado', 'Favoritos importados com sucesso!', 'success');
+                initFavoritesView();
+            } else {
+                throw new Error('Falha ao salvar os dados importados.');
+            }
+
+        } catch (error) {
+            console.error('Erro ao importar favoritos:', error);
+            showToast('Erro', `Falha ao importar: ${error.message}`, 'error');
+        } finally {
+             event.target.value = null;
+        }
+    };
+
+    reader.onerror = function() {
+        console.error('Erro ao ler o arquivo de importação.');
+        showToast('Erro', 'Não foi possível ler o arquivo selecionado.', 'error');
+        event.target.value = null;
+    };
+
+    reader.readAsText(file);
   }
   
   async function initExercisesView() {
@@ -263,7 +369,7 @@ async function loadExercises(page = 1, filters = state.filters) {
              state.currentPage = 1;
              state.totalPages = 1;
              state.totalItems = response.suggestions?.length || 0;
-             if (paginationContainer) paginationContainer.style.display = 'none'; // Esconde paginação
+             if (paginationContainer) paginationContainer.style.display = 'none';
 
         } else {
             console.log("Carregando exercícios com filtros/paginação"); // Debug
@@ -271,7 +377,7 @@ async function loadExercises(page = 1, filters = state.filters) {
             const apiParams = {
                 limit: state.itemsPerPage,
                 offset: offset,
-                language: 4 // Ou 2
+                language: 4
             };
             if (filters.muscles && filters.muscles.length > 0) apiParams.muscles = filters.muscles;
             if (filters.equipment && filters.equipment.length > 0) {
@@ -538,43 +644,53 @@ async function loadExercises(page = 1, filters = state.filters) {
     });
   }
   
-async function openExerciseDetails(exerciseId) { // Marcar como async
-    if (!elements.detailPanel || !elements.detailContent) return;
+  async function openExerciseDetails(exerciseId) {
+    if (!elements.detailPanel || !elements.detailContent || !exerciseId) return;
 
     state.detailOpen = true;
     elements.detailPanel.classList.add('open');
     elements.detailContent.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 
-    let exercise = state.exercises.find(ex => ex.id === exerciseId);
+    let exerciseData = null;
 
-    let detailedExerciseData = null;
-    if (!exercise || exercise.description === `Exercício da categoria ${exercise.muscleGroup}. Mais detalhes ao clicar.`) {
-        console.log(`Buscando detalhes completos para ID: ${exerciseId}`); // Debug
-        try {
-            const rawDetailedData = await api.getExerciseInfo({ id: exerciseId, limit: 1 }); // Ou api.getExerciseById(exerciseId) se existir
-            if (rawDetailedData && rawDetailedData.results && rawDetailedData.results.length > 0) {
-                 if(!state.auxiliaryData) state.auxiliaryData = await api.getAuxiliaryData(); // Garante dados aux
-                 detailedExerciseData = api.processExercise(rawDetailedData.results[0], state.auxiliaryData);
-            } else {
-                console.warn("Não foi possível buscar detalhes completos para ID:", exerciseId);
+    try {
+        if (state.currentView === 'favorites') {
+            console.log(`Buscando favorito no localStorage ID: ${exerciseId}`);
+            exerciseData = storage.favorites.getAll().find(fav => fav.id === exerciseId);
+            if (!exerciseData) {
+                 throw new Error('Favorito não encontrado no armazenamento local.');
             }
-        } catch (error) {
-            console.error("Erro ao buscar detalhes completos:", error);
-            showToast('Erro', 'Falha ao buscar detalhes do exercício.', 'error');
+            console.log('Dados do favorito encontrados:', exerciseData);
+
+
+        } else {
+            console.log(`Buscando detalhes na API para ID: ${exerciseId}`);
+            const rawDetailedData = await api.getSingleExerciseInfo(exerciseId);
+
+            if (rawDetailedData) {
+                if (!state.auxiliaryData) state.auxiliaryData = await api.getAuxiliaryData();
+                exerciseData = api.processExercise(rawDetailedData, state.auxiliaryData);
+            } else {
+                 throw new Error('Detalhes do exercício não encontrados na API.');
+            }
         }
+
+        renderExerciseDetails(exerciseData);
+        storage.viewed.add(exerciseData);
+
+    } catch (error) {
+        console.error(`Erro ao abrir detalhes para ID ${exerciseId}:`, error);
+        elements.detailContent.innerHTML = `<p>Erro ao carregar detalhes: ${error.message}</p>`;
+        showToast('Erro', `Não foi possível carregar os detalhes do exercício: ${error.message}`, 'error');
     }
-
-    const finalExerciseData = detailedExerciseData || exercise;
-
-    if (!finalExerciseData) {
-        elements.detailContent.innerHTML = '<p>Erro: Exercício não encontrado.</p>';
-        return;
-    }
-
-    renderExerciseDetails(finalExerciseData);
-
-    storage.viewed.add(finalExerciseData);
-}
+  }
+  
+   function updateFavoriteButton(button, isFavorite) {
+    if (!button) return;
+    button.innerHTML = `<i class="${isFavorite ? 'fa-solid' : 'fa-regular'} fa-star"></i>`;
+    button.classList.toggle('active', isFavorite);
+    button.setAttribute('aria-label', isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos');
+  }
   
   function renderExerciseDetails(exercise) {
     if (!elements.detailContent) return;
@@ -772,7 +888,7 @@ function handleSearchEnter(e) {
         if (searchTerm !== state.searchQuery) {
             state.searchQuery = searchTerm;
             console.log("Novo termo de busca:", state.searchQuery); // Debug
-            loadExercises(1, state.filters); // Inicia busca com o termo atual
+            loadExercises(1, state.filters);
         } else {
              if(state.searchQuery){
                 loadExercises(1, state.filters);
@@ -785,8 +901,8 @@ function handleSearchEnter(e) {
 function processSearchSuggestion(suggestionData) {
     const categoryName = suggestionData.category || 'Desconhecida';
 
-    let imageUrl = 'https://placehold.co/400x300/transparent/grey?text=Sem+imagem'; // Fallback padrão
-    const wgerBaseUrl = 'https://wger.de'; // URL base da API
+    let imageUrl = 'https://placehold.co/400x300/transparent/grey?text=Sem+imagem';
+    const wgerBaseUrl = 'https://wger.de';
 
     if (suggestionData.image && typeof suggestionData.image === 'string') {
         if (!suggestionData.image.startsWith('http')) {
@@ -822,57 +938,62 @@ function processSearchSuggestion(suggestionData) {
     renderFavorites(sortedFavorites);
   }
   
-  function toggleFavorite(card) {
+  async function toggleFavorite(card) {
     if (!card) return;
-    
+
     const exerciseId = parseInt(card.dataset.id);
     const favoriteBtn = card.querySelector('.exercise-card__favorite');
-    
-    const exerciseData = {
-      id: exerciseId,
-      name: card.querySelector('.exercise-card__title').textContent,
-      description: card.querySelector('.exercise-card__description').textContent,
-      muscleGroup: card.querySelector('.exercise-card__muscle-group').textContent,
-      image: card.querySelector('.exercise-card__image').src,
-    };
-    
-    console.log('Dados do exercício sendo favoritado:', exerciseData);
-    
-    const isFavorite = storage.favorites.toggle(exerciseData);
-    
-    updateFavoriteButton(favoriteBtn, isFavorite);
-    
-    if (isFavorite) {
-      showToast('Adicionado', 'Exercício adicionado aos favoritos!', 'success');
-      
-      updateFilterCounts();
+    const isCurrentlyFavorite = storage.favorites.isFavorite(exerciseId);
+
+    if (isCurrentlyFavorite) {
+        const removed = storage.favorites.remove(exerciseId);
+        if (removed) {
+            updateFavoriteButton(favoriteBtn, false);
+            showToast('Removido', 'Exercício removido dos favoritos!', 'info');
+
+            if (state.currentView === 'favorites') {
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    card.remove();
+                    const favorites = storage.favorites.getAll();
+                    if (favorites.length === 0) {
+                        showEmptyFavorites();
+                    }
+                }, 300);
+            }
+        }
     } else {
-      showToast('Removido', 'Exercício removido dos favoritos!', 'info');
-      
-      if (state.currentView === 'favorites') {
-        const favorites = storage.favorites.getAll();
-        
-        card.style.opacity = '0';
-        card.style.transform = 'scale(0.8)';
-        setTimeout(() => {
-          card.remove();
-          
-          if (favorites.length === 0) {
-            showEmptyFavorites();
-          }
-        }, 300);
-      }
-    }
-  }
-  
-  function updateFavoriteButton(button, isFavorite) {
-    if (!button) return;
-    
-    button.classList.toggle('active', isFavorite);
-    
-    const icon = button.querySelector('i');
-    if (icon) {
-      icon.className = isFavorite ? 'fa-solid fa-star' : 'fa-regular fa-star';
+        if(favoriteBtn) favoriteBtn.innerHTML = '<div class="spinner spinner-sm"></div>';
+
+        try {
+            console.log(`Buscando detalhes para favoritar ID: ${exerciseId}`);
+            const rawDetailedData = await api.getSingleExerciseInfo(exerciseId);
+
+            if (rawDetailedData) {
+                if (!state.auxiliaryData) state.auxiliaryData = await api.getAuxiliaryData();
+                const detailedExerciseData = api.processExercise(rawDetailedData, state.auxiliaryData);
+
+                const added = storage.favorites.add(detailedExerciseData);
+
+                if (added) {
+                    updateFavoriteButton(favoriteBtn, true);
+                    showToast('Adicionado', `${detailedExerciseData.name} adicionado aos favoritos!`, 'success');
+                } else {
+                     updateFavoriteButton(favoriteBtn, false);
+                     showToast('Erro', 'Não foi possível salvar o favorito.', 'error');
+                }
+
+        } else {
+                 updateFavoriteButton(favoriteBtn, false);
+                 showToast('Erro', 'Detalhes do exercício não encontrados para favoritar.', 'error');
+                 console.warn("Não foi possível buscar detalhes (getSingleExerciseInfo) para favoritar ID:", exerciseId);
+        }
+		} catch (error) {
+             updateFavoriteButton(favoriteBtn, false);
+             console.error("Erro ao buscar detalhes (getSingleExerciseInfo) para favoritar:", error);
+             showToast('Erro', `Falha ao buscar detalhes: ${error.message}`, 'error');
+        }
     }
   }
   
@@ -1023,11 +1144,26 @@ function processSearchSuggestion(suggestionData) {
   
   document.head.insertAdjacentHTML('beforeend', `
     <style>
-      .no-scroll {
-        overflow: hidden;
+      .spinner-sm {
+        display: inline-block;
+        width: 1em; /* Usa o tamanho da fonte do botão */
+        height: 1em;
+        border: 2px solid rgba(255, 255, 255, 0.3); /* Cor clara para contraste */
+        border-radius: 50%;
+        border-top-color: #fff; /* Cor sólida */
+        animation: spin 1s ease-in-out infinite;
+        vertical-align: middle; /* Alinha com o texto se houver */
       }
+      .btn-outline .spinner-sm { /* Ajuste para botão outline */
+         border-color: rgba(var(--color-primary-rgb, 54, 179, 126), 0.3);
+         border-top-color: var(--color-primary);
+      }
+       /* Define a variável --color-primary-rgb se não existir */
+      :root { --color-primary-rgb: 54, 179, 126; }
+      [data-theme="dark"] { --color-primary-rgb: 0, 184, 169; }
     </style>
   `);
-  
+
+
   document.addEventListener('DOMContentLoaded', init);
 })();

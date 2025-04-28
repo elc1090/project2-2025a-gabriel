@@ -29,27 +29,47 @@
     tokenExpiry: localStorage.getItem('tokenExpiry') || null
   };
   
-  function buildUrl(endpoint, queryParams = {}) {
-    const url = new URL(API_CONFIG.baseUrl + endpoint);
-    
-    Object.keys(queryParams).forEach(key => {
-        const value = queryParams[key];
-
-        if (value !== undefined && value !== null) {
-            if (Array.isArray(value)) {
-                value.forEach(item => {
-                    if (item !== undefined && item !== null && item !== '') {
-                         url.searchParams.append(key, item);
-                    }
-                });
-            } else if (value !== '') {
-                url.searchParams.append(key, value);
-            }
+    function buildUrl(baseUrlOrPath, queryParams = {}) {
+        let url;
+        try {
+            url = new URL(baseUrlOrPath.startsWith('http') ? baseUrlOrPath : API_CONFIG.baseUrl + baseUrlOrPath);
+        } catch (e) {
+            url = new URL(API_CONFIG.baseUrl + baseUrlOrPath);
         }
-    });
-    
-    return url.toString();
-  }
+
+
+        Object.keys(queryParams).forEach(key => {
+            const value = queryParams[key];
+
+            if (value !== undefined && value !== null) {
+                if (Array.isArray(value)) {
+                    if (url.searchParams.has(key)) {
+                        url.searchParams.delete(key);
+                    }
+                    value.forEach(item => {
+                        if (item !== undefined && item !== null && item !== '') {
+                             url.searchParams.append(key, item);
+                        }
+                    });
+                } else if (value !== '') {
+                    url.searchParams.set(key, value);
+                } else {
+                     url.searchParams.delete(key);
+                }
+            } else {
+                 url.searchParams.delete(key);
+            }
+        });
+
+         Array.from(url.searchParams.keys()).forEach(key => {
+             if (!url.searchParams.get(key) && !Array.isArray(queryParams[key])) {
+                 url.searchParams.delete(key);
+             }
+         });
+
+
+        return url.toString();
+    }
   
   function getHeaders(requiresAuth = false) {
     const headers = { ...API_CONFIG.defaultHeaders };
@@ -131,6 +151,9 @@
   }
   
   async function fetchWithAuth(endpoint, options = {}, requiresAuth = false, queryParams = {}, retry = true) {
+	  
+	const finalUrl = buildUrl(endpoint, queryParams);
+	  
     if (requiresAuth && !isTokenValid() && authState.refreshToken) {
       const refreshed = await refreshAccessToken();
       if (!refreshed) {
@@ -147,7 +170,7 @@
     };
     
     try {
-      const response = await fetch(buildUrl(endpoint, queryParams), fetchOptions);
+      const response = await fetch(finalUrl, fetchOptions);
       
       if (response.status === 401 && retry && authState.refreshToken) {
         const refreshed = await refreshAccessToken();
@@ -165,7 +188,7 @@
       
       return await response.json();
     } catch (error) {
-      console.error(`Erro na requisição para ${endpoint}:`, error);
+      console.error(`Erro na requisição para ${finalUrl}:`, error);
       throw error;
     }
   }
@@ -219,16 +242,33 @@
       language: 2
     };
     
-    const queryParams = { ...defaultParams, ...params };
+    const { id, ...listParams } = params;
+    if (id) {
+        console.warn('getExerciseInfo NÃO deve ser chamada com ID. Use getSingleExerciseInfo. ID ignorado.');
+    }
+	
+	const queryParams = { ...defaultParams, ...listParams };
 
     Object.keys(queryParams).forEach(key => {
         if (queryParams[key] === undefined || queryParams[key] === null || queryParams[key] === '') {
             delete queryParams[key];
+        } else if (Array.isArray(queryParams[key])) {
+             queryParams[key] = queryParams[key].filter(item => item !== undefined && item !== null && item !== '');
+             if (queryParams[key].length === 0) {
+                 delete queryParams[key];
+             }
         }
     });
 
-
     return fetchWithAuth(API_CONFIG.endpoints.exerciseInfo, { method: 'GET' }, false, queryParams);
+  }
+  
+   async function getSingleExerciseInfo(id) {
+      if (!id) throw new Error("ID do exercício é necessário para getSingleExerciseInfo");
+      console.log(`API: Buscando /exerciseinfo/${id}/`);
+      const queryParams = { language: 2 };
+      const urlWithPath = `${API_CONFIG.endpoints.exerciseInfo}${id}/`;
+      return fetchWithAuth(urlWithPath, { method: 'GET' }, false, queryParams);
   }
   
   async function getExerciseById(id) {
@@ -347,7 +387,8 @@ function processExercise(apiExercise, auxiliaryData) {
     isAuthenticated,
     getExercises,
     getExerciseInfo,
-    getExerciseById,
+	getSingleExerciseInfo,
+    // getExerciseById,
     getExerciseImages,
     getExerciseCategories,
     getEquipment,
