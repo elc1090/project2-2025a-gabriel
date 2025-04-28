@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
@@ -47,21 +48,21 @@
         <h1 class="content__title">Meus Exercícios Favoritos</h1>
         <p class="content__subtitle">Seus exercícios salvos em um só lugar</p>
 
-        <div class="d-flex justify-between align-center mt-lg">
-          <div class="d-flex gap-md">
+        <div class="d-flex justify-between align-center mt-lg flex-wrap gap-md">
+          <div class="d-flex gap-md flex-wrap">
             <button class="btn btn-primary" id="export-favorites-btn">
               <i class="fa-solid fa-file-export btn-icon"></i> Exportar Lista
             </button>
             <button class="btn btn-primary" id="import-favorites-btn">
               <i class="fa-solid fa-file-import btn-icon"></i> Importar Lista
             </button>
-            <button class="btn btn-outline" id="clear-favorites">
+            <button class="btn btn-secondary btn-sm" id="clear-favorites">
               <i class="fa-solid fa-trash btn-icon"></i> Limpar Todos
             </button>
             <input type="file" id="import-file-input" accept=".json" style="display: none;">
           </div>
 
-            <div class="d-flex align-center gap-sm">
+            <div class="d-flex align-center gap-sm flex-wrap">
                  <label for="category-filter-select" class="filter-checkbox__label text-nowrap">Filtrar por:</label>
                  <select id="category-filter-select" class="search-input search-input--filter me-lg">
                   <option value="all">Todas as Categorias</option>
@@ -78,18 +79,23 @@
             </div>
         </div>
 
-         <div class="create-category-group">
-            <label for="new-category-input" class="visually-hidden">Nome da nova categoria:</label>
-            <input type="text" id="new-category-input" class="search-input search-input--sm" placeholder="Nova categoria...">
-            <button class="btn btn-primary btn-sm" id="add-category-btn">
-                <i class="fa-solid fa-plus btn-icon"></i> Criar
-            </button>
+        <div class="category-management mt-lg d-flex gap-md flex-wrap">
+             <div class="create-category-group">
+                <label for="new-category-input" class="visually-hidden">Nome da nova categoria:</label>
+                <input type="text" id="new-category-input" class="search-input search-input--sm" placeholder="Nova categoria...">
+                <button class="btn btn-primary btn-sm" id="add-category-btn">
+                    <i class="fa-solid fa-plus btn-icon"></i> Criar
+                </button>
+				<button class="btn btn-secondary btn-sm" id="delete-categories-btn">
+					<i class="fa-solid fa-trash-can btn-icon"></i> Deletar Categorias
+				</button>
+            </div>
         </div>
+
 
       </div>
 
       <div class="exercise-grid" id="favorites-grid">
-
         <div class="empty-state col-span-full" id="empty-favorites" style="display: none;">
           <div class="empty-state__icon">
             <i class="fa-regular fa-star"></i>
@@ -109,12 +115,11 @@
       <button class="detail-panel__close" id="detail-panel-close" aria-label="Fechar detalhes">
         <i class="fa-solid fa-xmark"></i>
       </button>
-
       <div id="detail-content"></div>
     </aside>
   </div>
 
-  <nav class="nav-mobile-bar">
+    <nav class="nav-mobile-bar">
     <ul class="nav-mobile__list">
       <li class="nav-mobile__item">
         <a href="index.html" class="nav-mobile__link">
@@ -137,27 +142,40 @@
     </ul>
   </nav>
 
-  <footer class="footer">
-    <div class="container footer__container">
-      <div class="footer__logo">
-        <img src="assets/favicon.jpg" alt="FitCat" class="logo__image"> <span class="logo__text">FitCat</span>
-      </div>
+    <footer class="footer">
+     <div class="container footer__container">
+       <div class="footer__logo">
+         <img src="assets/favicon.jpg" alt="FitCat" class="logo__image"> <span class="logo__text">FitCat</span>
+       </div>
+     <div class="footer__copyright">
+       &copy; 2025 FitCat.
+     </div>
+   </footer>
 
-      <div class="footer__links">
-        <a href="#" class="footer__link">Sobre</a>
-        <a href="#" class="footer__link">Contato</a>
-        <a href="#" class="footer__link">Termos de Uso</a>
-        <a href="#" class="footer__link">Privacidade</a>
-      </div>
+    <div class="toast-container" id="toast-container"></div>
+
+  <div class="modal-overlay" id="category-list-modal-overlay" style="display: none;">
+    <div class="modal" id="category-list-modal">
+      <button class="modal__close" id="category-list-modal-close" aria-label="Fechar lista de categorias">&times;</button>
+      <h3 class="modal__title">Selecionar Categoria para Deletar</h3>
+      <ul class="category-delete-list" id="category-delete-list">
+        <li class="category-delete-list__empty" style="display: none;">Nenhuma categoria customizada para deletar.</li>
+      </ul>
     </div>
-
-    <div class="footer__copyright">
-      &copy; 2025 FitCat.
-    </div>
-  </footer>
-
-  <div class="toast-container" id="toast-container">
   </div>
+
+  <div class="modal-overlay" id="confirm-delete-modal-overlay" style="display: none;">
+      <div class="modal modal--confirm" id="confirm-delete-modal">
+          <button class="modal__close" id="confirm-delete-modal-close" aria-label="Fechar confirmação">&times;</button>
+          <h3 class="modal__title">Confirmar Deleção</h3>
+          <p id="confirm-delete-message">Tem certeza que deseja deletar a categoria "<span id="category-to-delete-name"></span>"? Exercícios nesta categoria serão movidos para "Sem Categoria".</p>
+          <div class="modal__actions">
+              <button class="btn btn-outline" id="cancel-delete-btn">Cancelar</button>
+              <button class="btn btn-secondary" id="confirm-delete-btn">Deletar</button>
+          </div>
+      </div>
+  </div>
+
 
   <script src="js/theme.js"></script>
   <script src="js/router.js"></script>

@@ -26,7 +26,20 @@
     
     emptyFavorites: document.getElementById('empty-favorites'),
     
-    toastContainer: document.getElementById('toast-container')
+    toastContainer: document.getElementById('toast-container'),
+	
+    deleteCategoriesBtn: document.getElementById('delete-categories-btn'),
+    categoryListModalOverlay: document.getElementById('category-list-modal-overlay'),
+    categoryListModal: document.getElementById('category-list-modal'),
+    categoryListModalClose: document.getElementById('category-list-modal-close'),
+    categoryDeleteList: document.getElementById('category-delete-list'),
+    confirmDeleteModalOverlay: document.getElementById('confirm-delete-modal-overlay'),
+    confirmDeleteModal: document.getElementById('confirm-delete-modal'),
+    confirmDeleteModalClose: document.getElementById('confirm-delete-modal-close'),
+    categoryToDeleteName: document.getElementById('category-to-delete-name'),
+    cancelDeleteBtn: document.getElementById('cancel-delete-btn'),
+    confirmDeleteBtn: document.getElementById('confirm-delete-btn'),
+    emptyDeleteListMessage: document.querySelector('.category-delete-list__empty')
   };
   
   const state = {
@@ -58,11 +71,7 @@
       'Quadriceps': { name: 'Quadríceps', color: 'var(--color-muscle-legs)' },
       'Hamstrings': { name: 'Posteriores', color: 'var(--color-muscle-legs)' }
     },
-    difficulties: {
-      1: { name: 'Iniciante', class: 'beginner' },
-      2: { name: 'Intermediário', class: 'intermediate' },
-      3: { name: 'Avançado', class: 'advanced' }
-    }
+    categoryToDelete: null
   };
   
   async function init() {
@@ -276,8 +285,139 @@
               elements.importFileInput.removeEventListener('change', importFavorites);
               elements.importFileInput.addEventListener('change', importFavorites);
           }
-
+        if (elements.deleteCategoriesBtn) {
+            elements.deleteCategoriesBtn.addEventListener('click', openCategoryListModal);
+        }
+        if (elements.categoryListModalOverlay) {
+            elements.categoryListModalOverlay.addEventListener('click', (e) => {
+                 if (e.target === elements.categoryListModalOverlay) {
+                     closeCategoryListModal();
+                 }
+            });
+        }
+        if (elements.categoryListModalClose) {
+            elements.categoryListModalClose.addEventListener('click', closeCategoryListModal);
+        }
+        if (elements.confirmDeleteModalOverlay) {
+            elements.confirmDeleteModalOverlay.addEventListener('click', (e) => {
+                 if (e.target === elements.confirmDeleteModalOverlay) {
+                     closeConfirmDeleteModal();
+                 }
+            });
+        }
+        if (elements.confirmDeleteModalClose) {
+            elements.confirmDeleteModalClose.addEventListener('click', closeConfirmDeleteModal);
+        }
+        if (elements.cancelDeleteBtn) {
+            elements.cancelDeleteBtn.addEventListener('click', closeConfirmDeleteModal);
+        }
+        if (elements.confirmDeleteBtn) {
+            elements.confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+        }
     }
+	
+     document.querySelectorAll('#chip-container .chip[data-filter-type="all"], #chip-container .chip[data-filter-type="no-equipment"]').forEach(chip => {
+         const newChip = chip.cloneNode(true);
+         chip.parentNode.replaceChild(newChip, chip);
+         newChip.addEventListener('click', handleChipFilter);
+     });
+    
+    document.addEventListener('click', (e) => {
+      if (state.sidebarOpen && window.innerWidth < 768) {
+        if (!elements.sidebar.contains(e.target) && 
+            !elements.navToggle.contains(e.target) && 
+            !elements.filterBtnMobile.contains(e.target)) {
+          closeSidebar();
+        }
+      }
+    });
+    
+    window.addEventListener('resize', handleWindowResize);
+	
+  }
+
+  function openCategoryListModal() {
+      populateCategoryDeleteList();
+      if (elements.categoryListModalOverlay) {
+          elements.categoryListModalOverlay.style.display = 'flex';
+          setTimeout(() => elements.categoryListModalOverlay.classList.add('open'), 10);
+      }
+  }
+
+  function closeCategoryListModal() {
+      if (elements.categoryListModalOverlay) {
+          elements.categoryListModalOverlay.classList.remove('open');
+          setTimeout(() => elements.categoryListModalOverlay.style.display = 'none', 300); // Match transition duration
+      }
+  }
+
+  function populateCategoryDeleteList() {
+      if (!elements.categoryDeleteList || !elements.emptyDeleteListMessage) return;
+
+      const categories = storage.customCategories.getAll();
+      const customCategories = categories.filter(cat => cat.id !== 'all' && cat.id !== 'uncategorized');
+
+      elements.categoryDeleteList.innerHTML = '';
+
+      if (customCategories.length === 0) {
+          elements.emptyDeleteListMessage.style.display = 'block';
+      } else {
+          elements.emptyDeleteListMessage.style.display = 'none';
+          customCategories.forEach(cat => {
+              const listItem = document.createElement('li');
+              listItem.className = 'category-delete-list__item';
+              listItem.dataset.categoryId = cat.id;
+              listItem.dataset.categoryName = cat.name;
+              listItem.innerHTML = `
+                  <span>${cat.name}</span>
+                  <i class="fa-solid fa-trash-can"></i>
+              `;
+              listItem.addEventListener('click', () => {
+                  openConfirmDeleteModal(cat.id, cat.name);
+              });
+              elements.categoryDeleteList.appendChild(listItem);
+          });
+      }
+  }
+
+  function openConfirmDeleteModal(categoryId, categoryName) {
+      state.categoryToDelete = { id: categoryId, name: categoryName };
+      if (elements.categoryToDeleteName) {
+          elements.categoryToDeleteName.textContent = categoryName;
+      }
+      if (elements.confirmDeleteModalOverlay) {
+          elements.confirmDeleteModalOverlay.style.display = 'flex';
+          setTimeout(() => elements.confirmDeleteModalOverlay.classList.add('open'), 10);
+      }
+  }
+
+  function closeConfirmDeleteModal() {
+      if (elements.confirmDeleteModalOverlay) {
+          elements.confirmDeleteModalOverlay.classList.remove('open');
+          setTimeout(() => {
+              elements.confirmDeleteModalOverlay.style.display = 'none';
+              state.categoryToDelete = null;
+              if (elements.categoryToDeleteName) elements.categoryToDeleteName.textContent = '';
+          }, 300);
+      }
+  }
+
+  function handleConfirmDelete() {
+      if (!state.categoryToDelete) return;
+
+      const { id: categoryId, name: categoryName } = state.categoryToDelete;
+      const success = storage.customCategories.remove(categoryId);
+
+      if (success) {
+          showToast('Sucesso', `Categoria "${categoryName}" deletada.`, 'success');
+          closeConfirmDeleteModal();
+          closeCategoryListModal();
+          populateCategoryFilter();
+          applyFavoriteFiltersAndSort();
+      } else {
+          showToast('Erro', `Não foi possível deletar a categoria "${categoryName}".`, 'error');
+      }
+  }
 	
   function handleAddCategory() {
       if (!elements.newCategoryInput) return;
@@ -298,25 +438,7 @@
           showToast('Erro', `Não foi possível criar a categoria "${categoryName}". Verifique se já existe.`, 'error');
       }
   }
-	
-     document.querySelectorAll('#chip-container .chip[data-filter-type="all"], #chip-container .chip[data-filter-type="no-equipment"]').forEach(chip => {
-         const newChip = chip.cloneNode(true);
-         chip.parentNode.replaceChild(newChip, chip);
-         newChip.addEventListener('click', handleChipFilter);
-     });
-    
-    document.addEventListener('click', (e) => {
-      if (state.sidebarOpen && window.innerWidth < 768) {
-        if (!elements.sidebar.contains(e.target) && 
-            !elements.navToggle.contains(e.target) && 
-            !elements.filterBtnMobile.contains(e.target)) {
-          closeSidebar();
-        }
-      }
-    });
-    
-    window.addEventListener('resize', handleWindowResize);
-  }
+  
   
     function handleCategoryFilterChange(event) {
       state.currentFavoriteFilter = event.target.value;

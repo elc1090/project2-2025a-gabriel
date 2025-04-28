@@ -477,3 +477,133 @@
 .toast--warning .toast__icon {
   color: var(--color-warning);
 }
+
+.category-management {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: var(--z-modal);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal), visibility 0s var(--transition-normal);
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--transition-normal);
+}
+
+.modal {
+  background-color: var(--color-background-card);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  max-width: 90%;
+  width: 400px;
+  position: relative;
+  transform: scale(0.9);
+  transition: transform var(--transition-normal);
+}
+
+.modal-overlay.open .modal {
+  transform: scale(1);
+}
+
+.modal__close {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: none;
+  border: none;
+  font-size: var(--fs-xl);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  line-height: 1;
+}
+
+.modal__close:hover {
+  color: var(--color-text-primary);
+}
+
+.modal__title {
+  font-size: var(--fs-lg);
+  margin-bottom: var(--spacing-lg);
+  font-family: var(--font-heading);
+}
+
+.modal--confirm {
+  width: 350px;
+}
+
+.modal--confirm p {
+  font-size: var(--fs-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.category-delete-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.category-delete-list__item {
+  padding: var(--spacing-sm) var(--spacing-xs);
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-delete-list__item:last-child {
+  border-bottom: none;
+}
+
+.category-delete-list__item:hover {
+  background-color: var(--color-background-alt);
+  color: var(--color-primary);
+}
+
+.category-delete-list__item .fa-trash-can {
+  color: var(--color-text-tertiary);
+  transition: color var(--transition-fast);
+  opacity: 0;
+}
+
+.category-delete-list__item:hover .fa-trash-can {
+  opacity: 1;
+  color: var(--color-error);
+}
+
+.category-delete-list__empty {
+  padding: var(--spacing-md);
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
