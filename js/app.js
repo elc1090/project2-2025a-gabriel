@@ -184,7 +184,9 @@ async function init() {
     }
     
     if (elements.searchInput) {
-      elements.searchInput.addEventListener('input', debounce(handleSearch, 500));
+        elements.searchInput.addEventListener('input', debounce(handleSearchInput, 3000));
+
+        elements.searchInput.addEventListener('keydown', handleSearchEnter);
     }
 	
     if (elements.clearFiltersBtn) {
@@ -245,62 +247,86 @@ async function init() {
   }
   
 async function loadExercises(page = 1, filters = state.filters) {
+    console.log(`--- loadExercises chamado --- Página: ${page}, Filtros:`, JSON.stringify(filters), "Busca:", state.searchQuery); // Debug
+    const paginationContainer = document.querySelector('.pagination');
+
     try {
         showLoading();
         const offset = (page - 1) * state.itemsPerPage;
+        let response;
+        let isSearch = false;
 
-        const apiParams = {
-            limit: state.itemsPerPage,
-            offset: offset,
-            language: 4
-        };
+        if (state.searchQuery) {
+            console.log(`Executando BUSCA por: "${state.searchQuery}"`); // Debug
+            isSearch = true;
+            response = await api.searchExercises(state.searchQuery, '4,2');
+             state.currentPage = 1;
+             state.totalPages = 1;
+             state.totalItems = response.suggestions?.length || 0;
+             if (paginationContainer) paginationContainer.style.display = 'none'; // Esconde paginação
 
-        if (filters.muscles && filters.muscles.length > 0) {
-            apiParams.muscles = filters.muscles;
+        } else {
+            console.log("Carregando exercícios com filtros/paginação"); // Debug
+            isSearch = false;
+            const apiParams = {
+                limit: state.itemsPerPage,
+                offset: offset,
+                language: 4 // Ou 2
+            };
+            if (filters.muscles && filters.muscles.length > 0) apiParams.muscles = filters.muscles;
+            if (filters.equipment && filters.equipment.length > 0) {
+                const validEquipmentIds = filters.equipment.filter(id => !isNaN(parseInt(id)));
+                if (validEquipmentIds.length > 0) apiParams.equipment = validEquipmentIds;
+            }
+            if (filters.category) apiParams.category = filters.category;
+
+            console.log("Parâmetros enviados para API (Info):", apiParams);
+            response = await api.getExerciseInfo(apiParams);
+            state.currentPage = page;
+            state.totalItems = response.count;
+            state.totalPages = Math.ceil(response.count / state.itemsPerPage);
+             if (paginationContainer) paginationContainer.style.display = 'flex';
         }
-        if (filters.equipment && filters.equipment.length > 0) {
-             const validEquipmentIds = filters.equipment.filter(id => !isNaN(parseInt(id)));
-             if (validEquipmentIds.length > 0) {
-                 apiParams.equipment = validEquipmentIds;
-             }
-        }
-        if (filters.category) {
-            apiParams.category = filters.category;
-        }
-         if (state.searchQuery) {
-             apiParams.search = state.searchQuery;
-         }
-		 
-        if (typeof api.getExerciseInfo !== 'function') {
-             console.error('api.getExerciseInfo não é uma função!');
-             showToast('Erro', 'Erro interno na configuração da API.', 'error');
-             hideLoading();
-             return;
-         }
 
-        const response = await api.getExerciseInfo(apiParams);
+        console.log("Resposta da API recebida:", response); // Debug
 
-        if (!state.auxiliaryData) {
+        if (!isSearch && !state.auxiliaryData) {
+             console.log("Recarregando dados auxiliares para processamento..."); // Debug
              state.auxiliaryData = await api.getAuxiliaryData();
         }
 
-
-        state.exercises = response.results.map(exercise =>
-            api.processExercise(exercise, state.auxiliaryData)
-        );
-
-        state.currentPage = page;
-        state.totalItems = response.count;
-        state.totalPages = Math.ceil(response.count / state.itemsPerPage);
+        if (isSearch && response.suggestions) {
+            console.log("Processando sugestões de busca..."); // Debug
+            state.exercises = response.suggestions.map(suggestion =>
+                processSearchSuggestion(suggestion.data)
+            );
+        } else if (!isSearch && response.results) {
+             console.log("Processando resultados de exerciseinfo..."); // Debug
+            state.exercises = response.results.map(exercise =>
+                api.processExercise(exercise, state.auxiliaryData)
+            );
+        } else {
+             console.log("Resposta inesperada ou vazia da API."); // Debug
+             state.exercises = [];
+             if (!isSearch) {
+                 state.currentPage = 1;
+                 state.totalPages = 0;
+                 state.totalItems = 0;
+             }
+        }
 
         renderExercises(state.exercises);
 
-        updatePaginationControls();
+        if (!isSearch) {
+             updatePaginationControls();
+        }
+
 
     } catch (error) {
          console.error('Erro ao carregar exercícios:', error);
-         showToast('Erro', 'Falha ao carregar exercícios.', 'error');
-         if(elements.exerciseGrid) elements.exerciseGrid.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar exercícios.</p>';
+         showToast('Erro', `Falha ao carregar exercícios: ${error.message}`, 'error');
+         if(elements.exerciseGrid) elements.exerciseGrid.innerHTML = `<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar exercícios: ${error.message}</p>`;
+         if (paginationContainer) paginationContainer.style.display = 'none';
      } finally {
          hideLoading();
      }
@@ -453,15 +479,15 @@ async function loadExercises(page = 1, filters = state.filters) {
     
     card.innerHTML = `
       <div class="exercise-card__image-container">
-        <img src="${exercise.image}" alt="${exercise.name}" class="exercise-card__image" onerror="this.src='https://via.placeholder.com/400x300?text=Sem+imagem'">
+        <img src="${exercise.image || 'https://placehold.co/400x300?text=Sem+imagem'}" alt="${exercise.name}" class="exercise-card__image" onerror="this.src='https://placehold.co/400x300?text=Sem+imagem'">
       </div>
       <div class="exercise-card__body">
-        <h3 class="exercise-card__title">${exercise.name}</h3>
+        <h3 class="exercise-card__title">${exercise.name || 'Nome Indisponível'}</h3>
         <p class="exercise-card__description">
-          ${exercise.description}
+          ${exercise.description || 'Sem descrição disponível.'}
         </p>
         <div class="exercise-card__footer">
-          <span class="exercise-card__muscle-group">${exercise.muscleGroup}</span>
+          <span class="exercise-card__muscle-group">${exercise.muscleGroup || 'Indefinido'}</span>
           <button class="exercise-card__favorite ${isFavorite ? 'active' : ''}" aria-label="${isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}">
             <i class="${isFavorite ? 'fa-solid' : 'fa-regular'} fa-star"></i>
           </button>
@@ -512,21 +538,43 @@ async function loadExercises(page = 1, filters = state.filters) {
     });
   }
   
-  function openExerciseDetails(exerciseId) {
+async function openExerciseDetails(exerciseId) { // Marcar como async
     if (!elements.detailPanel || !elements.detailContent) return;
-    
+
     state.detailOpen = true;
     elements.detailPanel.classList.add('open');
-    
     elements.detailContent.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-    
-    const exercise = state.exercises.find(ex => ex.id === exerciseId);
-    if (!exercise) return;
-    
-    renderExerciseDetails(exercise);
-    
-    storage.viewed.add(exercise);
-  }
+
+    let exercise = state.exercises.find(ex => ex.id === exerciseId);
+
+    let detailedExerciseData = null;
+    if (!exercise || exercise.description === `Exercício da categoria ${exercise.muscleGroup}. Mais detalhes ao clicar.`) {
+        console.log(`Buscando detalhes completos para ID: ${exerciseId}`); // Debug
+        try {
+            const rawDetailedData = await api.getExerciseInfo({ id: exerciseId, limit: 1 }); // Ou api.getExerciseById(exerciseId) se existir
+            if (rawDetailedData && rawDetailedData.results && rawDetailedData.results.length > 0) {
+                 if(!state.auxiliaryData) state.auxiliaryData = await api.getAuxiliaryData(); // Garante dados aux
+                 detailedExerciseData = api.processExercise(rawDetailedData.results[0], state.auxiliaryData);
+            } else {
+                console.warn("Não foi possível buscar detalhes completos para ID:", exerciseId);
+            }
+        } catch (error) {
+            console.error("Erro ao buscar detalhes completos:", error);
+            showToast('Erro', 'Falha ao buscar detalhes do exercício.', 'error');
+        }
+    }
+
+    const finalExerciseData = detailedExerciseData || exercise;
+
+    if (!finalExerciseData) {
+        elements.detailContent.innerHTML = '<p>Erro: Exercício não encontrado.</p>';
+        return;
+    }
+
+    renderExerciseDetails(finalExerciseData);
+
+    storage.viewed.add(finalExerciseData);
+}
   
   function renderExerciseDetails(exercise) {
     if (!elements.detailContent) return;
@@ -708,11 +756,62 @@ function handleFilterChange(e) {
     });
 }
   
- function handleSearch(e) {
-     state.searchQuery = e.target.value.trim();
-     loadExercises(1, state.filters);
- }
+function handleSearchInput(e) {
+    state.searchQuery = e.target.value.trim();
+    loadExercises(1, state.filters);
+}
 
+
+function handleSearchEnter(e) {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+        console.log("Enter pressionado na busca");
+        e.preventDefault();
+
+        const searchTerm = e.target.value.trim();
+
+        if (searchTerm !== state.searchQuery) {
+            state.searchQuery = searchTerm;
+            console.log("Novo termo de busca:", state.searchQuery); // Debug
+            loadExercises(1, state.filters); // Inicia busca com o termo atual
+        } else {
+             if(state.searchQuery){
+                loadExercises(1, state.filters);
+             }
+        }
+
+    }
+}
+
+function processSearchSuggestion(suggestionData) {
+    const categoryName = suggestionData.category || 'Desconhecida';
+
+    let imageUrl = 'https://placehold.co/400x300?text=Sem+imagem'; // Fallback padrão
+    const wgerBaseUrl = 'https://wger.de'; // URL base da API
+
+    if (suggestionData.image && typeof suggestionData.image === 'string') {
+        if (!suggestionData.image.startsWith('http')) {
+            imageUrl = wgerBaseUrl + suggestionData.image;
+        } else {
+            imageUrl = suggestionData.image;
+        }
+    } else if (suggestionData.image_thumbnail && typeof suggestionData.image_thumbnail === 'string') {
+        if (!suggestionData.image_thumbnail.startsWith('http')) {
+            imageUrl = wgerBaseUrl + suggestionData.image_thumbnail;
+        } else {
+            imageUrl = suggestionData.image_thumbnail;
+        }
+    }
+
+    return {
+        id: suggestionData.id,
+        name: suggestionData.name || 'Nome Indisponível',
+        description: `Exercício da categoria ${categoryName}. Mais detalhes ao clicar.`,
+        muscleGroup: categoryName,
+        muscles: [categoryName],
+        equipment: [],
+        image: imageUrl
+    };
+}
   
   function handleSortFavorites(e) {
     const sortBy = e.target.value;

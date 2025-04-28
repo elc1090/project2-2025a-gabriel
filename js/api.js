@@ -16,6 +16,7 @@
       exerciseInfo: '/exerciseinfo/',
       exerciseImages: '/exerciseimage/',
       exerciseCategories: '/exercisecategory/',
+	  exerciseSearch: '/exercise/search/',
       equipment: '/equipment/',
       muscles: '/muscle/',
       languages: '/language/'
@@ -308,7 +309,7 @@ function processExercise(apiExercise, auxiliaryData) {
     const categoryName = auxiliaryData.categories.get(apiExercise.category?.id)?.name || 'Other';
 
     const mainImage = apiExercise.images?.find(img => img.is_main);
-    const imageUrl = mainImage ? mainImage.image : (apiExercise.images?.length > 0 ? apiExercise.images[0].image : 'https://placehold.co/400x300');
+    const imageUrl = mainImage ? mainImage.image : (apiExercise.images?.length > 0 ? apiExercise.images[0].image : 'https://placehold.co/400x300?text=Sem+imagem');
 
 
     return {
@@ -328,6 +329,18 @@ function processExercise(apiExercise, auxiliaryData) {
     return temp.textContent || temp.innerText || '';
   }
   
+	async function searchExercises(term, languageIds = '4,2') {
+		console.log(`Buscando por termo: ${term}, Idiomas: ${languageIds}`); // Debug
+		if (!term) {
+			return Promise.resolve({ suggestions: [] });
+		}
+		const queryParams = {
+			term: term,
+			language: languageIds
+		};
+		return fetchWithAuth(API_CONFIG.endpoints.exerciseSearch, { method: 'GET' }, false, queryParams);
+	}
+  
   window.api = {
     login,
     logout,
@@ -339,6 +352,7 @@ function processExercise(apiExercise, auxiliaryData) {
     getExerciseCategories,
     getEquipment,
     getMuscles,
+	searchExercises,
     getAuxiliaryData,
     processExercise
   };
