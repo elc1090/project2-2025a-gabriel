@@ -271,16 +271,6 @@
       return fetchWithAuth(urlWithPath, { method: 'GET' }, false, queryParams);
   }
   
-  async function getExerciseById(id) {
-    return fetchWithAuth(`${API_CONFIG.endpoints.exercises}${id}/`, { method: 'GET' });
-  }
-  
-  async function getExerciseImages(exerciseId) {
-    return fetchWithAuth(API_CONFIG.endpoints.exerciseImages, { 
-      method: 'GET' 
-    }, false, { exercise: exerciseId });
-  }
-  
   async function getExerciseCategories() {
     return fetchWithAuth(API_CONFIG.endpoints.exerciseCategories, { method: 'GET' });
   }
@@ -388,8 +378,6 @@ function processExercise(apiExercise, auxiliaryData) {
     getExercises,
     getExerciseInfo,
 	getSingleExerciseInfo,
-    // getExerciseById,
-    getExerciseImages,
     getExerciseCategories,
     getEquipment,
     getMuscles,

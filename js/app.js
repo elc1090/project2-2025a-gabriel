@@ -1218,15 +1218,6 @@ function processSearchSuggestion(suggestionData) {
     };
 }
   
-  function handleSortFavorites(e) {
-    const sortBy = e.target.value;
-    
-    storage.preferences.set('sortOption', sortBy);
-    
-    const sortedFavorites = storage.favorites.sort(sortBy);
-    renderFavorites(sortedFavorites);
-  }
-  
   async function toggleFavorite(card) {
     if (!card) return;
 
@@ -1317,15 +1308,6 @@ function processSearchSuggestion(suggestionData) {
     elements.emptyFavorites.style.gridColumn = '1 / -1';
   }
   
-  function simulateLoading() {
-    state.isLoading = true;
-    
-    if (state.currentView === 'exercises' && elements.exerciseGrid) {
-      
-      
-    }
-  }
-  
   function handleWindowResize() {
     if (window.innerWidth >= 768 && state.sidebarOpen) {
       closeSidebar();
@@ -1410,25 +1392,6 @@ function processSearchSuggestion(suggestionData) {
     return Object.keys(state.muscleGroups).find(key => 
       key.toLowerCase() === muscleName.toLowerCase()
     ) || muscleName;
-  }
-  
-  function updateFilterCounts() {
-    const favorites = storage.favorites.getAll();
-    
-    const muscleCounts = {};
-    favorites.forEach(exercise => {
-      const muscle = exercise.muscleGroup.toLowerCase();
-      muscleCounts[muscle] = (muscleCounts[muscle] || 0) + 1;
-    });
-    
-    document.querySelectorAll('.filter-checkbox').forEach(checkbox => {
-      const filterValue = checkbox.querySelector('.filter-checkbox__input').value;
-      const countElement = checkbox.querySelector('.filter-checkbox__count');
-      
-      if (countElement && checkbox.querySelector('.filter-checkbox__input').name === 'muscle') {
-        const count = muscleCounts[filterValue] || 0;
-      }
-    });
   }
   
   document.head.insertAdjacentHTML('beforeend', `

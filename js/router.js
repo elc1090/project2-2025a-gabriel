@@ -31,24 +31,9 @@
     localStorage.setItem('lastVisitedPage', state.currentPage);
   }
   
-  function navigateTo(page) {
-    window.location.href = page;
-  }
-  
-  function goBack() {
-    window.history.back();
-  }
-  
-  function goToLastVisited() {
-    navigateTo(state.lastVisitedPage);
-  }
-  
   document.addEventListener('DOMContentLoaded', init);
   
   window.router = {
-    navigateTo,
-    goBack,
-    goToLastVisited,
     getCurrentPage: () => state.currentPage
   };
 })();
