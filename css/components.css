@@ -32,6 +32,7 @@
   height: 100%;
   background-color: var(--card-before-background, var(--color-muscle-chest)); /* Usa variável dinâmica */
   transition: background-color var(--transition-normal);
+  z-index: 10;
 }
 
 .exercise-card:hover {
@@ -53,6 +54,7 @@
   height: 100%;
   object-fit: cover;
   transition: transform var(--transition-normal);
+  z-index: 9;
 }
 
 .exercise-card:hover .exercise-card__image {
