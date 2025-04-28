@@ -25,9 +25,18 @@ Substitua este texto por uma descrição do que foi produzido: funcionalidades e
 
 
 ### Desenvolvimento
+Ao longo do desenvolvimento eu fui mudando algumas poucas coisas, como uma mudança de cor no CSS, formato de algo, ou mudança de alguma descrição. Os passos abaixo mostram uma visão geral do desenvolvimento:
 
-Substitua este texto por uma descrição do processo de desenvolvimento, explicando decisões tomadas e etapas do trabalho.
-
+1- Criação de um site mockup, apenas em HTML e CSS, com o formato geral que imaginei e populando com cards fakes, filtros fakes, chips fakes, que depois serão substituídos pela API.  
+2- Correções gerais e criação de uma página para salvar exercícios favoritos.  
+3- Javascript inícial para funcionalidade dos botões.
+4- Integração inicial da API, popula os exercícios corretamente.
+5- Correção da API.
+6- Filtros fakes agora populados dinâmicamente através da API.
+7- Chips fakes agora populados dinâmicamente através da API.
+8- Implementação (e depois correção) da busca, através da API de busca.
+9- Funcionalidades melhoradas na página de favoritos (importar, exportar e adição de categorias).
+10- Melhorias gerais e remoção de código redundante.
 
 #### Tecnologias
 
