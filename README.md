@@ -20,8 +20,7 @@ Gabriel Bisognin Moro | Ciência da Computação
 
 ### Nosso produto
 
-Substitua este texto por uma descrição do que foi produzido: funcionalidades e relação com a temática "Conhecimento"
-
+Galeria de exercícios através da [API wger](https://wger.de/pt-br/software/api), permite navegar pelos exercícios, filtrar por músculos e equipamentos, favoritar e categorizar os exercícios favoritados, além de permitir exportar e importar listas de favoritos.
 
 
 ### Desenvolvimento
@@ -52,12 +51,8 @@ Ao longo do desenvolvimento eu fui mudando algumas poucas coisas, como uma mudan
 
 #### Referências e créditos
 
-Substitua este trecho por uma lista bem detalhada de todo material consultado para ajudar no projeto, por exemplo:  URL de templates usados, URL de icon kits usados, créditos para colegas que colaboraram, geradores de código (incluindo alguns prompts usados para o ChatGPT, se for o caso)
-- ...
-- ...
+- Documentação da [API wger](https://wger.de/pt-br/software/api)  
+- Exploração do [site wger](https://wger.de/pt-br/exercise/overview/), para verificar como algumas requisições eram feitas
+- [Claude](https://claude.ai/new) para criar códigos que seriam repetitivos, otimizar e limpar o código
 
-
-
-
----
 Projeto entregue para a disciplina de [Desenvolvimento de Software para a Web](http://github.com/andreainfufsm/elc1090-2025a) em 2025a
