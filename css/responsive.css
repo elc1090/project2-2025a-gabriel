@@ -179,6 +179,16 @@
   .container {
     padding: 0 var(--spacing-md);
   }
+  
+  .content__header .d-flex.justify-between {
+     flex-wrap: wrap;
+  }
+  .content__header .d-flex.gap-md {
+      flex-wrap: wrap;
+  }
+  .content__header .d-flex.align-center.gap-sm {
+      flex-wrap: wrap;
+  }
 }
 
 /* Telas muito pequenas */

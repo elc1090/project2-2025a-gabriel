@@ -287,6 +287,27 @@
   color: var(--color-primary);
 }
 
+.search-input--filter {
+  width: auto;
+  padding: var(--spacing-xs) var(--spacing-md);
+}
+
+.search-input--sm {
+    padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.create-category-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+    flex-wrap: wrap;
+}
+.create-category-group input.search-input--sm {
+    flex-grow: 1;
+    min-width: 150px;
+}
+
 /* Paginação */
 .pagination {
   display: flex;

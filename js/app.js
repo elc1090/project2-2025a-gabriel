@@ -19,6 +19,10 @@
     exportFavoritesBtn: document.getElementById('export-favorites-btn'),
     importFavoritesBtn: document.getElementById('import-favorites-btn'),
     importFileInput: document.getElementById('import-file-input'),
+	
+    categoryFilterSelect: document.getElementById('category-filter-select'),
+    newCategoryInput: document.getElementById('new-category-input'),
+    addCategoryBtn: document.getElementById('add-category-btn'),
     
     emptyFavorites: document.getElementById('empty-favorites'),
     
@@ -36,6 +40,7 @@
     sidebarOpen: false,
     selectedExercise: null,
     filters: { muscles: [], equipment: [], category: null },
+	currentFavoriteFilter: 'all',
     exercises: [],
     searchQuery: '',
     auxiliaryData: null,
@@ -60,45 +65,78 @@
     }
   };
   
-async function init() {
-    console.log("Iniciando aplicação..."); // Debug
+  async function init() {
+    console.log("Iniciando aplicação...");
     if (!storage.isAvailable()) {
-        showToast('Atenção', 'O armazenamento local não está disponível. Suas preferências não serão salvas.', 'warning');
+        showToast('Atenção', 'O armazenamento local não está disponível.', 'warning');
     }
 
     setupEventListeners();
-    console.log("Listeners de eventos configurados."); // Debug
+    console.log("Listeners de eventos configurados.");
 
     try {
-        console.log("Carregando dados auxiliares..."); // Debug
-        state.auxiliaryData = await api.getAuxiliaryData();
-        console.log("Dados auxiliares carregados:", state.auxiliaryData); // Debug
+        console.log("Carregando dados auxiliares...");
+        const auxDataPromise = api.getAuxiliaryData().catch(err => {
+            console.error("Falha crítica ao carregar dados auxiliares:", err);
+            showToast('Erro Grave', 'Falha ao carregar dados essenciais da API. Algumas funcionalidades podem estar indisponíveis.', 'error');
+            return null;
+        });
+        state.auxiliaryData = await auxDataPromise;
+        console.log("Dados auxiliares carregados:", state.auxiliaryData);
 
-        console.log("Populando filtros e chips..."); // Debug
-        populateFiltersDynamically();
-        populateCategoryChips();
-        console.log("Filtros e chips populados."); // Debug
+        console.log("Populando filtros e chips...");
+        if (state.auxiliaryData && state.auxiliaryData.muscles && state.auxiliaryData.categories && state.auxiliaryData.equipment) {
+            populateFiltersDynamically();
+            populateCategoryChips();
+        } else {
+            console.warn("Não foi possível popular filtros/chips devido à falha no carregamento dos dados auxiliares.");
+        }
+        console.log("Filtros e chips populados (ou ignorados).");
 
         if (state.currentView === 'favorites') {
-            console.log("Inicializando view de Favoritos..."); // Debug
-            if (elements.favoritesGrid) {
-                elements.favoritesGrid.innerHTML = '';
-            }
+            console.log("Inicializando view de Favoritos...");
+             if (elements.favoritesGrid) {
+                 elements.favoritesGrid.innerHTML = '';
+             }
+             populateCategoryFilter();
             initFavoritesView();
         } else if (state.currentView === 'exercises') {
-            console.log("Inicializando view de Exercícios..."); // Debug
+            console.log("Inicializando view de Exercícios...");
             await initExercisesView();
         }
-         console.log("Inicialização completa."); // Debug
+         console.log("Inicialização completa.");
 
     } catch (error) {
-        console.error("Falha ao carregar dados auxiliares ou inicializar view:", error);
-        showToast('Erro', 'Falha ao inicializar a aplicação.', 'error');
+        console.error("Erro geral durante a inicialização:", error);
+        showToast('Erro', `Falha ao inicializar a aplicação: ${error.message}`, 'error');
         if (elements.exerciseGrid) {
             elements.exerciseGrid.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar dados iniciais. Tente recarregar a página.</p>';
         }
+         if (elements.favoritesGrid) {
+             elements.favoritesGrid.innerHTML = '<p class="text-center" style="grid-column: 1/-1;">Erro ao carregar dados iniciais. Tente recarregar a página.</p>';
+         }
     }
 }
+
+  function populateCategoryFilter() {
+      if (!elements.categoryFilterSelect) return;
+
+      const categories = storage.customCategories.getAll();
+      const selectedValue = elements.categoryFilterSelect.value || state.currentFavoriteFilter || 'all';
+
+      elements.categoryFilterSelect.innerHTML = '';
+
+      categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.id;
+          option.textContent = cat.name;
+          if (cat.id === selectedValue) {
+              option.selected = true;
+          }
+          elements.categoryFilterSelect.appendChild(option);
+      });
+      state.currentFavoriteFilter = elements.categoryFilterSelect.value;
+  }
   
   function populateFiltersDynamically() {
     const muscleListElement = document.getElementById('muscle-filter-list');
@@ -204,27 +242,62 @@ async function init() {
       chip.addEventListener('click', handleChipFilter);
     });
     
-    if (elements.clearFavorites) {
-      elements.clearFavorites.addEventListener('click', clearAllFavorites);
-    }
-    
-    if (elements.sortFavorites) {
-      elements.sortFavorites.addEventListener('change', handleSortFavorites);
+    if (state.currentView === 'favorites') {
+        if (elements.categoryFilterSelect) {
+            elements.categoryFilterSelect.addEventListener('change', handleCategoryFilterChange);
+        }
+        if (elements.addCategoryBtn) {
+            elements.addCategoryBtn.addEventListener('click', handleAddCategory);
+        }
+        if (elements.newCategoryInput) {
+            elements.newCategoryInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleAddCategory();
+                }
+            });
+        }
+         if (elements.sortFavorites) {
+            elements.sortFavorites.removeEventListener('change', handleSortFavorites);
+            elements.sortFavorites.addEventListener('change', handleSortFavorites);
+        }
+        if (elements.clearFavorites) {
+             elements.clearFavorites.removeEventListener('click', clearAllFavorites);
+             elements.clearFavorites.addEventListener('click', clearAllFavorites);
+        }
+         if (elements.exportFavoritesBtn) {
+             elements.exportFavoritesBtn.removeEventListener('click', exportFavorites);
+             elements.exportFavoritesBtn.addEventListener('click', exportFavorites);
+         }
+         if (elements.importFavoritesBtn) {
+              elements.importFavoritesBtn.removeEventListener('click', triggerImport);
+              elements.importFavoritesBtn.addEventListener('click', triggerImport);
+         }
+          if (elements.importFileInput) {
+              elements.importFileInput.removeEventListener('change', importFavorites);
+              elements.importFileInput.addEventListener('change', importFavorites);
+          }
+
     }
 	
-    if (elements.exportFavoritesBtn) {
-        elements.exportFavoritesBtn.addEventListener('click', exportFavorites);
-    }
+  function handleAddCategory() {
+      if (!elements.newCategoryInput) return;
 
-    if (elements.importFavoritesBtn) {
-        elements.importFavoritesBtn.addEventListener('click', () => {
-            elements.importFileInput.click();
-        });
-    }
+      const categoryName = elements.newCategoryInput.value.trim();
+      if (!categoryName) {
+          showToast('Atenção', 'Digite um nome para a nova categoria.', 'warning');
+          return;
+      }
 
-    if (elements.importFileInput) {
-        elements.importFileInput.addEventListener('change', importFavorites);
-    }
+      const newCategory = storage.customCategories.add(categoryName);
+
+      if (newCategory) {
+          showToast('Sucesso', `Categoria "${newCategory.name}" criada!`, 'success');
+          elements.newCategoryInput.value = '';
+          populateCategoryFilter();
+      } else {
+          showToast('Erro', `Não foi possível criar a categoria "${categoryName}". Verifique se já existe.`, 'error');
+      }
+  }
 	
      document.querySelectorAll('#chip-container .chip[data-filter-type="all"], #chip-container .chip[data-filter-type="no-equipment"]').forEach(chip => {
          const newChip = chip.cloneNode(true);
@@ -245,31 +318,63 @@ async function init() {
     window.addEventListener('resize', handleWindowResize);
   }
   
-   function exportFavorites() {
-    const favoritesData = storage.favorites.getAll();
-    if (favoritesData.length === 0) {
-        showToast('Aviso', 'Você não tem favoritos para exportar.', 'warning');
-        return;
+    function handleCategoryFilterChange(event) {
+      state.currentFavoriteFilter = event.target.value;
+      applyFavoriteFiltersAndSort();
+  }
+  
+    function handleSortFavorites(event) {
+     applyFavoriteFiltersAndSort();
+  }
+  
+    function triggerImport() {
+        if (elements.importFileInput) {
+            elements.importFileInput.click();
+        }
     }
+	
+   function applyFavoriteFiltersAndSort() {
+       if (!elements.favoritesGrid) return;
 
+       const allFavorites = storage.favorites.getAll();
+       let filteredFavorites = [];
+
+       const filterId = state.currentFavoriteFilter;
+       if (filterId === 'all') {
+           filteredFavorites = allFavorites;
+       } else if (filterId === 'uncategorized') {
+           filteredFavorites = allFavorites.filter(fav => fav.customCategoryId === null || fav.customCategoryId === undefined);
+       } else {
+           filteredFavorites = allFavorites.filter(fav => fav.customCategoryId === filterId);
+       }
+
+       const sortOption = elements.sortFavorites ? elements.sortFavorites.value : 'name';
+       const sortedAndFilteredFavorites = storage.favorites.sort.call({ getAll: () => filteredFavorites }, sortOption);
+
+       renderFavorites(sortedAndFilteredFavorites);
+   }
+  
+  function exportFavorites() {
     try {
-        const jsonData = JSON.stringify(favoritesData, null, 2);
-        const blob = new Blob([jsonData], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
+        // Chama exportData pedindo 'all' para incluir categorias
+        const exportResult = storage.exportData('all');
+        if (!exportResult || !exportResult.url) {
+             throw new Error("Falha ao gerar dados para exportação.");
+        }
 
         const a = document.createElement('a');
-        a.href = url;
-        a.download = 'fitcat-favoritos.json';
+        a.href = exportResult.url;
+        a.download = exportResult.filename; // Usa o nome de arquivo retornado
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
 
-        URL.revokeObjectURL(url);
-        showToast('Exportado', 'Lista de favoritos exportada com sucesso!', 'success');
+        URL.revokeObjectURL(exportResult.url);
+        showToast('Exportado', 'Dados completos (favoritos e categorias) exportados!', 'success');
 
     } catch (error) {
-        console.error('Erro ao exportar favoritos:', error);
-        showToast('Erro', 'Ocorreu um erro ao exportar seus favoritos.', 'error');
+        console.error('Erro ao exportar dados completos:', error);
+        showToast('Erro', `Ocorreu um erro ao exportar: ${error.message}`, 'error');
     }
   }
 
@@ -287,41 +392,46 @@ async function init() {
 
     reader.onload = function(e) {
         try {
-            const importedData = JSON.parse(e.target.result);
+            const importedJson = JSON.parse(e.target.result);
 
-            if (!Array.isArray(importedData)) {
-                throw new Error('O arquivo JSON não contém um array de favoritos válido.');
+            // Verifica se é o formato novo (objeto) ou antigo (array)
+            let dataToImport;
+            let importType;
+            if (Array.isArray(importedJson)) {
+                 // Formato antigo (apenas favoritos)
+                 dataToImport = importedJson;
+                 importType = 'favorites'; // Indica para storage.importData tratar como legado
+                 console.log("Detectado formato legado de importação (apenas favoritos).");
+            } else if (typeof importedJson === 'object' && importedJson !== null && (Array.isArray(importedJson.favorites) || Array.isArray(importedJson.custom_categories))) {
+                // Formato novo (objeto com chaves)
+                dataToImport = importedJson;
+                importType = 'all';
+                 console.log("Detectado formato novo de importação (favoritos e/ou categorias).");
+            } else {
+                 throw new Error('Formato de arquivo JSON inválido ou não reconhecido.');
             }
 
-            const isValid = importedData.every(item =>
-                item &&
-                typeof item.id === 'number' &&
-                typeof item.name === 'string' &&
-                typeof item.description === 'string' &&
-                Array.isArray(item.muscles) &&
-                Array.isArray(item.equipment) &&
-                typeof item.muscleGroup === 'string' &&
-                typeof item.image === 'string'
-            );
 
-            if (!isValid) {
-                 throw new Error('Alguns itens no arquivo JSON não contêm todos os detalhes esperados.');
-            }
-
-            const success = storage.importData(importedData, 'favorites');
+            // Chama storage.importData com o tipo correto
+            const success = storage.importData(dataToImport, importType);
 
             if (success) {
-                showToast('Importado', 'Favoritos importados com sucesso!', 'success');
-                initFavoritesView();
+                showToast('Importado', 'Dados importados com sucesso!', 'success');
+                 // Atualiza a UI na página de favoritos
+                 if (state.currentView === 'favorites') {
+                     populateCategoryFilter(); // Atualiza o dropdown de categorias
+                     initFavoritesView();      // Recarrega a lista de favoritos
+                 }
             } else {
-                throw new Error('Falha ao salvar os dados importados.');
+                // storage.importData deve ter logado o erro específico
+                throw new Error('Falha ao salvar os dados importados (ver console para detalhes).');
             }
 
         } catch (error) {
-            console.error('Erro ao importar favoritos:', error);
+            console.error('Erro ao importar dados:', error);
             showToast('Erro', `Falha ao importar: ${error.message}`, 'error');
         } finally {
-             event.target.value = null;
+             event.target.value = null; // Limpa input
         }
     };
 
@@ -537,44 +647,35 @@ async function loadExercises(page = 1, filters = state.filters) {
   
   function initFavoritesView() {
     if (!elements.favoritesGrid) return;
-    
-    console.log('Inicializando página de favoritos');
-    
-    const favorites = storage.favorites.getAll();
-    
-    console.log('Favoritos carregados:', favorites);
-    
-    if (favorites.length === 0) {
-      showEmptyFavorites();
-    } else {
-      const sortOption = elements.sortFavorites ? elements.sortFavorites.value : 'name';
-      const sortedFavorites = storage.favorites.sort(sortOption);
-      
-      renderFavorites(sortedFavorites);
+    console.log('Inicializando página de favoritos com filtro:', state.currentFavoriteFilter);
+
+    if (elements.categoryFilterSelect) {
+       elements.categoryFilterSelect.value = state.currentFavoriteFilter;
     }
+    if (elements.sortFavorites) {
+        // elements.sortFavorites.value = savedSort;
+    }
+
+    applyFavoriteFiltersAndSort();
   }
+
   
-  function renderFavorites(favorites) {
+  function renderFavorites(favoritesToRender) {
     if (!elements.favoritesGrid) return;
-    
+
     elements.favoritesGrid.innerHTML = '';
-    
-    if (elements.emptyFavorites) {
-      elements.emptyFavorites.style.display = 'none';
+
+    if (favoritesToRender.length === 0) {
+        showEmptyFavorites();
+    } else {
+        if (elements.emptyFavorites) elements.emptyFavorites.style.display = 'none';
+        favoritesToRender.forEach(exercise => {
+            const card = createExerciseCard(exercise, true);
+            elements.favoritesGrid.appendChild(card);
+        });
+        setupExerciseCards();
     }
-    
-    if (favorites.length === 0) {
-      showEmptyFavorites();
-      return;
-    }
-    
-    favorites.forEach(exercise => {
-      const card = createExerciseCard(exercise, true);
-      elements.favoritesGrid.appendChild(card);
-    });
-    
-    setupExerciseCards();
-  }
+}
   
   function createExerciseCard(exercise, isFavorite = false) {
     const card = document.createElement('article');
@@ -693,74 +794,140 @@ async function loadExercises(page = 1, filters = state.filters) {
   }
   
   function renderExerciseDetails(exercise) {
-    if (!elements.detailContent) return;
+    if (!elements.detailContent || !exercise) return;
     
     const isFavorite = storage.favorites.isFavorite(exercise.id);
     const favoriteIconClass = isFavorite ? 'fa-solid fa-star' : 'fa-regular fa-star';
-    const favoriteBtnClass = isFavorite ? 'btn-primary' : 'btn-outline';
+    const favoriteBtnText = isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos';
+    const favoriteBtnClass = isFavorite ? 'btn-secondary' : 'btn-outline';
+	
+    let categoryDropdownHTML = '';
+    if (state.currentView === 'favorites') {
+        const categories = storage.customCategories.getAll();
+        categoryDropdownHTML = `
+            <div class="detail-panel__category-assign">
+                <label for="assign-category-${exercise.id}">Categoria:</label>
+                <select id="assign-category-${exercise.id}" class="search-input" data-exercise-id="${exercise.id}">
+        `;
+        categoryDropdownHTML += `<option value="uncategorized" ${!exercise.customCategoryId ? 'selected' : ''}>Sem Categoria</option>`;
+
+        categories.forEach(cat => {
+             if (cat.id !== 'all' && cat.id !== 'uncategorized') {
+                categoryDropdownHTML += `<option value="${cat.id}" ${exercise.customCategoryId === cat.id ? 'selected' : ''}>${cat.name}</option>`;
+            }
+        });
+        categoryDropdownHTML += `
+                </select>
+            </div>
+        `;
+    }
     
     elements.detailContent.innerHTML = `
       <div class="detail-panel__image-container">
-        <img src="${exercise.image}" alt="${exercise.name}" class="detail-panel__image" onerror="this.src='https://via.placeholder.com/400x300?text=Sem+imagem'">
+        <img src="${exercise.image}" alt="${exercise.name}" class="detail-panel__image" onerror="this.src='https://via.placeholder.com/400x300/transparent/grey?text=Sem+imagem'">
       </div>
-      
+
       <div class="detail-panel__header">
-        <h2 class="detail-panel__title">${exercise.name}</h2>
+        <h2 class="detail-panel__title">${exercise.name || 'Nome Indisponível'}</h2>
         <div class="detail-panel__meta">
-          <span class="detail-panel__muscle">${exercise.muscleGroup}</span>
+          <span class="detail-panel__muscle">${exercise.muscleGroup || 'Indefinido'}</span>
+          ${exercise.difficulty ? `<span class="detail-panel__difficulty difficulty--${state.difficulties[exercise.difficulty]?.class || 'unknown'}">${state.difficulties[exercise.difficulty]?.name || ''}</span>` : ''}
         </div>
       </div>
-      
+
       <div class="detail-panel__description">
         <h3>Descrição</h3>
-        <p>${exercise.description}</p>
+        <p>${exercise.description || 'Sem descrição disponível.'}</p>
       </div>
-      
+
       ${exercise.muscles && exercise.muscles.length > 0 ? `
       <div class="detail-panel__muscles">
         <h3>Músculos Trabalhados</h3>
-        <ul>
-          ${exercise.muscles.map(muscle => `<li>${muscle}</li>`).join('')}
-        </ul>
+        <ul>${exercise.muscles.map(muscle => `<li>${muscle}</li>`).join('')}</ul>
       </div>
       ` : ''}
-      
+
       ${exercise.equipment && exercise.equipment.length > 0 ? `
       <div class="detail-panel__equipment">
         <h3>Equipamentos</h3>
-        <ul>
-          ${exercise.equipment.map(equip => `<li>${equip}</li>`).join('')}
-        </ul>
+        <ul>${exercise.equipment.map(equip => `<li>${equip}</li>`).join('')}</ul>
       </div>
       ` : ''}
-      
+
       <div class="detail-panel__actions">
         <button class="btn ${favoriteBtnClass} detail-panel__favorite" data-id="${exercise.id}">
-          <i class="${favoriteIconClass} btn-icon"></i> 
-          ${isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
+          <i class="${favoriteIconClass} btn-icon"></i> ${favoriteBtnText}
         </button>
+        ${categoryDropdownHTML}
       </div>
     `;
     
-    const favoriteBtn = elements.detailContent.querySelector('.detail-panel__favorite');
-    if (favoriteBtn) {
-      favoriteBtn.addEventListener('click', function() {
+    const detailFavoriteBtn = elements.detailContent.querySelector('.detail-panel__favorite');
+    if (detailFavoriteBtn) {
+      detailFavoriteBtn.addEventListener('click', async function() {
         const exerciseId = parseInt(this.dataset.id);
-        const exerciseCard = document.querySelector(`.exercise-card[data-id="${exerciseId}"]`);
-        
-        if (exerciseCard) {
-          toggleFavorite(exerciseCard);
-          
-          const newIsFavorite = storage.favorites.isFavorite(exerciseId);
-          this.innerHTML = `
-            <i class="${newIsFavorite ? 'fa-solid' : 'fa-regular'} fa-star btn-icon"></i> 
-            ${newIsFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}
-          `;
-          this.className = `btn ${newIsFavorite ? 'btn-primary' : 'btn-outline'} detail-panel__favorite`;
-        }
+         const currentlyFavorite = storage.favorites.isFavorite(exerciseId);
+
+         if (currentlyFavorite) {
+              storage.favorites.remove(exerciseId);
+              showToast('Removido', `${exercise.name} removido dos favoritos.`, 'info');
+              updateDetailFavoriteButton(this, false, exercise.name);
+              const cardInGrid = document.querySelector(`.exercise-card[data-id="${exerciseId}"] .exercise-card__favorite`);
+              if(cardInGrid) updateFavoriteButton(cardInGrid, false);
+               if (state.currentView === 'favorites') {
+                   applyFavoriteFiltersAndSort();
+               }
+
+         } else {
+              const spinnerIcon = '<div class="spinner spinner-sm" style="border-color: rgba(var(--color-text-inverse-rgb, 255, 255, 255), 0.3); border-top-color: var(--color-text-inverse, #fff);"></div>';
+              const originalText = this.innerHTML;
+              this.innerHTML = `${spinnerIcon} Adicionando...`;
+              this.disabled = true;
+
+              const added = storage.favorites.add(exercise, exercise.customCategoryId);
+
+              if(added) {
+                  showToast('Adicionado', `${exercise.name} adicionado aos favoritos!`, 'success');
+                   updateDetailFavoriteButton(this, true, exercise.name);
+                  const cardInGrid = document.querySelector(`.exercise-card[data-id="${exerciseId}"] .exercise-card__favorite`);
+                  if(cardInGrid) updateFavoriteButton(cardInGrid, true);
+              } else {
+                  showToast('Erro', `Não foi possível adicionar ${exercise.name} aos favoritos.`, 'error');
+                   this.innerHTML = originalText;
+              }
+              this.disabled = false;
+         }
       });
     }
+	
+    const assignCategorySelect = elements.detailContent.querySelector(`#assign-category-${exercise.id}`);
+    if (assignCategorySelect) {
+        assignCategorySelect.addEventListener('change', function() {
+            const selectedCategoryId = this.value;
+            const exerciseId = parseInt(this.dataset.exerciseId);
+            const success = storage.favorites.assignCategory(exerciseId, selectedCategoryId);
+            if (success) {
+                showToast('Sucesso', 'Categoria do exercício atualizada!', 'success');
+                exercise.customCategoryId = selectedCategoryId === 'uncategorized' ? null : selectedCategoryId;
+                if(state.currentView === 'favorites') {
+                    applyFavoriteFiltersAndSort();
+                }
+            } else {
+                 showToast('Erro', 'Não foi possível atualizar a categoria.', 'error');
+            }
+        });
+    }
   }
+  
+     function updateDetailFavoriteButton(button, isFavorite, exerciseName) {
+        if (!button) return;
+        const iconClass = isFavorite ? 'fa-solid fa-star' : 'fa-regular fa-star';
+        const text = isFavorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos';
+        const btnClass = isFavorite ? 'btn-secondary' : 'btn-outline'; // Mudar para secundário quando for favorito?
+        button.innerHTML = `<i class="${iconClass} btn-icon"></i> ${text}`;
+        button.className = `btn ${btnClass} detail-panel__favorite`;
+        button.setAttribute('aria-label', text);
+    }
   
   function closeDetailPanel() {
     if (!elements.detailPanel) return;
@@ -1161,6 +1328,33 @@ function processSearchSuggestion(suggestionData) {
        /* Define a variável --color-primary-rgb se não existir */
       :root { --color-primary-rgb: 54, 179, 126; }
       [data-theme="dark"] { --color-primary-rgb: 0, 184, 169; }
+	  
+      .detail-panel__category-assign {
+          margin-top: var(--spacing-md);
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+      }
+       .detail-panel__category-assign label {
+           font-weight: var(--fw-medium);
+           font-size: var(--fs-sm);
+           white-space: nowrap;
+       }
+       .detail-panel__category-assign select {
+           flex-grow: 1;
+           padding: var(--spacing-xs) var(--spacing-sm); /* Padding menor para select */
+           max-width: 200px; /* Limita largura máxima */
+       }
+       .detail-panel__actions {
+          display: flex;
+          flex-wrap: wrap; /* Permite quebrar linha */
+          gap: var(--spacing-md);
+          align-items: center; /* Alinha verticalmente */
+          margin-top: var(--spacing-lg);
+          padding-top: var(--spacing-lg);
+          border-top: 1px solid var(--color-border);
+       }
+
     </style>
   `);
 
