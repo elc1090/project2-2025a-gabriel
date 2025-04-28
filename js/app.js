@@ -479,7 +479,7 @@ async function loadExercises(page = 1, filters = state.filters) {
     
     card.innerHTML = `
       <div class="exercise-card__image-container">
-        <img src="${exercise.image || 'https://placehold.co/400x300?text=Sem+imagem'}" alt="${exercise.name}" class="exercise-card__image" onerror="this.src='https://placehold.co/400x300?text=Sem+imagem'">
+        <img src="${exercise.image || 'https://placehold.co/400x300/transparent/grey?text=Sem+imagem'}" alt="${exercise.name}" class="exercise-card__image" onerror="this.src='https://placehold.co/400x300/transparent/grey?text=Sem+imagem'">
       </div>
       <div class="exercise-card__body">
         <h3 class="exercise-card__title">${exercise.name || 'Nome Indisponível'}</h3>
@@ -785,7 +785,7 @@ function handleSearchEnter(e) {
 function processSearchSuggestion(suggestionData) {
     const categoryName = suggestionData.category || 'Desconhecida';
 
-    let imageUrl = 'https://placehold.co/400x300?text=Sem+imagem'; // Fallback padrão
+    let imageUrl = 'https://placehold.co/400x300/transparent/grey?text=Sem+imagem'; // Fallback padrão
     const wgerBaseUrl = 'https://wger.de'; // URL base da API
 
     if (suggestionData.image && typeof suggestionData.image === 'string') {

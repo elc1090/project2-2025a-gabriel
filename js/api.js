@@ -309,7 +309,7 @@ function processExercise(apiExercise, auxiliaryData) {
     const categoryName = auxiliaryData.categories.get(apiExercise.category?.id)?.name || 'Other';
 
     const mainImage = apiExercise.images?.find(img => img.is_main);
-    const imageUrl = mainImage ? mainImage.image : (apiExercise.images?.length > 0 ? apiExercise.images[0].image : 'https://placehold.co/400x300?text=Sem+imagem');
+    const imageUrl = mainImage ? mainImage.image : (apiExercise.images?.length > 0 ? apiExercise.images[0].image : 'https://placehold.co/400x300/transparent/grey?text=Sem+imagem');
 
 
     return {
