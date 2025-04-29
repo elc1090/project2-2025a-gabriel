@@ -1,6 +1,6 @@
 # Projeto: Consumindo uma API pública
 
-<img src="preview.png" alt="desktop preview" width="1080"/>
+<img src="preview.png" alt="desktop preview" height="720"/>
 
 Acesso: https://elc1090.github.io/project2-2025a-gabriel/
 
